@@ -1,0 +1,143 @@
+
+
+/* --- Reseteo Básico y Estilos Globales --- */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f7f8fc; /* Un gris muy claro para el fondo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- Contenedor Principal del Login --- */
+.login-container {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* --- Encabezado del Formulario --- */
+.login-header h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.login-header p {
+    font-size: 16px;
+    color: #777;
+    margin-bottom: 30px;
+}
+
+/* --- Grupos de Formulario (Label + Input) --- */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f7f8fc;
+    box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #f28500; /* Color naranja al hacer foco */
+}
+
+/* Contenedor para el campo de contraseña con el icono */
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper .toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999;
+}
+
+
+/* --- Opciones Adicionales (Recordarme y Olvidé Contraseña) --- */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.form-options .remember-me {
+    display: flex;
+    align-items: center;
+    color: #555;
+}
+
+.form-options .remember-me input {
+    margin-right: 8px;
+}
+
+.form-options a {
+    color: #f28500; /* Naranja para el enlace */
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* --- Botón Principal y Links Inferiores --- */
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    background-color: #f28500; /* Naranja principal */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+    background-color: #e67e22; /* Un naranja más oscuro para el hover */
+}
+
+.extra-links {
+    margin-top: 25px;
+    font-size: 14px;
+}
+
+.extra-links a {
+    color: #555;
+    text-decoration: none;
+    margin: 0 5px;
+    font-weight: 600;
+}
+
+.extra-links a.create-account {
+    color: #f28500;
+    display: block;
+    margin-bottom: 15px;
+}

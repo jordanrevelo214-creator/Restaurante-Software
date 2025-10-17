@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import pymysql
 pymysql.install_as_MySQLdb()
+import os 
+import re
+from django.core.exceptions import ValidationError
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,12 +36,14 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'axes',
     'core',
     'usuarios',
     'pedidos',
@@ -50,6 +55,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -73,6 +79,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'restaurante.wsgi.application'
 
+# Axes para restrer y blockear el acceso
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
+    # El backend por defecto de Django
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -94,12 +106,28 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
+
+class SpecialCharacterValidator:
+    def validate(self, password, user=None):
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise ValidationError(
+                "La contraseña debe contener al menos un carácter especial.",
+                code='password_no_special_char',
+            )
+
+    def get_help_text(self):
+        return "Tu contraseña debe contener al menos un carácter especial."
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        # Requerimiento: Mínimo 10 caracteres
+        'OPTIONS': {
+            'min_length': 10,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -107,8 +135,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    # Validador personalizado para mayúsculas, minúsculas y especiales
+    {
+        'NAME': 'usuarios.validators.CustomPasswordValidator', # Crearemos este archivo
+    },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -126,9 +157,71 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'usuarios.Usuario'
+LOGIN_URL = '/usuarios/login/'
+LOGOUT_REDIRECT_URL = '/usuarios/login/' # Con esto redirije a mi pagina de login 
+LOGIN_REDIRECT_URL = '/'
+
+# Configuracion de Jazzmin
+JAZZMIN_SETTINGS = {
+    # Título de la ventana del navegador
+    "site_title": "Restaurante Admin",
+
+    # Título en la cabecera
+    "site_header": "Restaurante App",
+
+    # Texto en la barra lateral
+    "site_brand": "Restaurante App",
+
+    # Logo para la marca (opcional)
+    # "site_logo": "usuarios/images/logo.png", # Ruta a tu logo en una carpeta static
+
+    # --- Interfaz de Usuario ---
+    "theme": "flatly", # Un tema limpio y claro
+
+    "ui_tweaks": {
+        "navbar_small_text": False,
+        "footer_small_text": False,
+        "body_small_text": False,
+        "brand_small_text": False,
+        "brand_colour": "navbar-warning", # Usa un color predefinido para la marca
+        "accent": "accent-warning",
+        "navbar": "navbar-warning navbar-dark",
+        "no_navbar_border": False,
+        "sidebar": "sidebar-dark-warning", # Barra lateral oscura con acentos naranjas
+        "sidebar_nav_small_text": False,
+        "sidebar_disable_expand": False,
+        "sidebar_nav_child_indent": False,
+        "sidebar_nav_compact_style": False,
+        "sidebar_nav_legacy_style": False,
+        "sidebar_nav_flat_style": True,
+        "theme": "flatly",
+        "actions_sticky_top": True
+    },
+
+    # --- Personalizar el Menú de la Barra Lateral ---
+    "order_with_respect_to": ["usuarios", "pedidos"], # Ordena tus apps
+
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "usuarios.Usuario": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "pedidos.Pedido": "fas fa-receipt", # Asumiendo que tu modelo se llama Pedido
+    },
+}
+
+# Configuración de AXES
+AXES_FAILURE_LIMIT = 5  # Bloqueo después de 5 intentos
+AXES_COOLOFF_TIME = 0.10 # Bloqueo por 15 minutos (0.25 horas)
+AXES_LOCKOUT_TEMPLATE = 'usuarios/lockout.html' # Plantilla a mostrar
+AXES_RESET_ON_SUCCESS = True # Resetea los intentos fallidos si el login es exitoso
+# Blockear el acceso por el nombre y no por la ip 
+AXES_LOCKOUT_PARAMETERS = ["username"]
+AXES_LOCKOUT_TEMPLATE = 'usuarios/lockout.html'
+AXES_RESET_ON_SUCCESS = True
