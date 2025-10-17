@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Mesero</title>
+    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="brand">Restaurante App</div>
+        <div class="user-info">
+            <span><i class="fas fa-user"></i> Bienvenido, {{ user.first_name|default:user.username }}</span>
+            <a href="{% url 'usuarios:logout' %}" class="logout-btn">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>Panel de Control</h1>
+            <p>Selecciona una mesa para gestionar un pedido o ver su estado.</p>
+        </div>
+
+        <section class="tables-section">
+            <h2>Mesas Asignadas</h2>
+            <div class="tables-grid">
+                <div class="table-card status-libre">
+                    <div class="table-number">1</div>
+                    <div class="table-status">Libre</div>
+                </div>
+                <div class="table-card status-ocupada">
+                    <div class="table-number">2</div>
+                    <div class="table-status">Ocupada</div>
+                </div>
+                <div class="table-card status-libre">
+                    <div class="table-number">3</div>
+                    <div class="table-status">Libre</div>
+                </div>
+                <div class="table-card status-pagando">
+                    <div class="table-number">4</div>
+                    <div class="table-status">Pagando</div>
+                </div>
+                <div class="table-card status-ocupada">
+                    <div class="table-number">5</div>
+                    <div class="table-status">Ocupada</div>
+                </div>
+                 <div class="table-card status-libre">
+                    <div class="table-number">6</div>
+                    <div class="table-status">Libre</div>
+                </div>
+            </div>
+        </section>
+
+        </main>
+
+</body>
+</html>

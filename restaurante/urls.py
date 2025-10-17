@@ -23,5 +23,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
      path('usuarios/', include('usuarios.urls')),
     path('pedidos/', include('pedidos.urls')),  # ← Agregamos esta línea
-    path('', include('usuarios.urls')),  # Opcional: redirige / a login
 ]
