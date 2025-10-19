@@ -119,27 +119,14 @@ class SpecialCharacterValidator:
         return "Tu contraseña debe contener al menos un carácter especial."
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        # Requerimiento: Mínimo 10 caracteres
-        'OPTIONS': {
-            'min_length': 10,
-        }
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-    # Validador personalizado para mayúsculas, minúsculas y especiales
-    {
-        'NAME': 'usuarios.validators.CustomPasswordValidator', # Crearemos este archivo
-    },
+
+  {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 10}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {'NAME': 'usuarios.validators.CustomPasswordValidator'},
 ]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -184,6 +171,7 @@ JAZZMIN_SETTINGS = {
 
     # --- Interfaz de Usuario ---
     "theme": "flatly", # Un tema limpio y claro
+    
 
     "ui_tweaks": {
         "navbar_small_text": False,
@@ -203,6 +191,7 @@ JAZZMIN_SETTINGS = {
         "sidebar_nav_flat_style": True,
         "theme": "flatly",
         "actions_sticky_top": True
+        
     },
 
     # --- Personalizar el Menú de la Barra Lateral ---
@@ -212,8 +201,11 @@ JAZZMIN_SETTINGS = {
         "auth": "fas fa-users-cog",
         "usuarios.Usuario": "fas fa-user",
         "auth.Group": "fas fa-users",
-        "pedidos.Pedido": "fas fa-receipt", # Asumiendo que tu modelo se llama Pedido
+        "pedidos.Pedido": "fas fa-receipt", 
     },
+    # Redireccionar a mi login 
+        "login_url": "usuarios:login",
+        "logout_url": "usuarios:logout",
 }
 
 # Configuración de AXES
