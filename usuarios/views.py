@@ -11,16 +11,15 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
-
+from django.contrib.auth import login, get_backends
+#aqui realizare un cambio
 
 def login_view(request):
-    # Si el usuario ya está autenticado, redirigirlo a su dashboard
     if request.user.is_authenticated:
         if request.user.rol == 'mesero':
             return redirect('usuarios:dashboard_mesero')
         elif request.user.rol == 'admin':
-            return redirect('admin:index') # O un dashboard de admin si tienes uno
-        # Añade otras redirecciones de rol si es necesario
+            return redirect('admin:index')
         
     if request.method == 'POST':
         identifier = request.POST.get('identifier')
@@ -30,29 +29,31 @@ def login_view(request):
             messages.error(request, 'Por favor, ingrese su usuario/correo y contraseña.')
             return render(request, 'usuarios/login.html')
 
-        # [cite_start]Buscamos al usuario por 'username' O por 'email' [cite: 16]
         try:
             user_q = Usuario.objects.get(Q(username=identifier) | Q(email=identifier))
             
-            # Autenticamos con el username real y la contraseña
-            user = authenticate(request, username=user_q.username, password=password)
-
-            if user is not None:
-                login(request, user)
-                # [cite_start]Redirigimos según el rol del usuario [cite: 19]
-                if user.rol == 'mesero':
+            print("="*50)
+            print(f"DEBUG LOGIN: Identificador recibido: '{identifier}'")
+            print(f"DEBUG LOGIN: Password recibida: '{password}'")
+            print(f"DEBUG LOGIN: Usuario encontrado: {user_q.username}")
+            print(f"DEBUG LOGIN: Check password result: {user_q.check_password(password)}")
+            print("="*50)
+             
+            if user_q.check_password(password):
+                backend = get_backends()[0]
+                user_q.backend = f"{backend.__module__}.{backend.__class__.__name__}"
+                login(request, user_q)
+                
+                if user_q.rol == 'mesero':
                     return redirect('usuarios:dashboard_mesero')
-                elif user.rol == 'admin':
+                elif user_q.rol == 'admin':
                     return redirect('admin:index')
-                # Por si hay otros roles en el futuro
                 else:
                     return redirect('/') 
             else:
-                # [cite_start]Mensaje de error genérico para no dar pistas [cite: 18, 53]
                 messages.error(request, 'Credenciales inválidas.')
         
         except Usuario.DoesNotExist:
-            # [cite_start]Mismo mensaje genérico si el usuario no existe [cite: 18, 53]
             messages.error(request, 'Credenciales inválidas.')
 
     return render(request, 'usuarios/login.html')
@@ -103,14 +104,27 @@ def password_reset_confirm(request, uidb64, token):
     except (TypeError, ValueError, OverflowError, Usuario.DoesNotExist):
         user = None
         
-
     if user is not None and default_token_generator.check_token(user, token):
         if request.method == "POST":
             password = request.POST.get('password')
             password2 = request.POST.get('password2')
+            
+            print("="*50)
+            print(f"DEBUG: Password recibida: '{password}'")
+            print(f"DEBUG: Password2 recibida: '{password2}'")
+            print(f"DEBUG: Son iguales: {password == password2}")
+            print("="*50)
+            
             if password == password2:
+                print(f"DEBUG: Guardando contraseña para usuario: {user.username}")
                 user.set_password(password)
                 user.save()
+                
+                user.refresh_from_db()
+                verificacion = user.check_password(password)
+                print(f"DEBUG: Verificación inmediata: {verificacion}")
+                print("="*50)
+                
                 messages.success(request, "Contraseña restablecida correctamente.")
                 return redirect('usuarios:login')
             else:
