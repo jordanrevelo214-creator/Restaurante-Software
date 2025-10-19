@@ -1,10 +1,26 @@
+# 📁 usuarios/admin.py
 
-# Register your models here.
 from django.contrib import admin
-from .models import Usuario
+from django.contrib.auth.admin import UserAdmin
+from .models import Usuario, AuditLog
 
-@admin.register(Usuario)
-class UsuarioAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'rol', 'is_active', 'is_staff')
-    list_filter = ('rol', 'is_active', 'is_staff')
-    search_fields = ('username', 'email')
+class CustomUserAdmin(UserAdmin):
+    # Esto es lo básico para que el admin reconozca tu campo 'rol'
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (None, {'fields': ('rol',)}),
+    )
+    fieldsets = UserAdmin.fieldsets + (
+        (None, {'fields': ('rol',)}),
+    )
+    list_display = ('username', 'email', 'first_name', 'last_name', 'rol', 'is_staff')
+
+# Registra tu modelo Usuario con esta configuración
+admin.site.register(Usuario, CustomUserAdmin)
+
+# Registra el AuditLog para poder verlo en el panel
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    list_display = ('user', 'action', 'ip_address', 'timestamp')
+    list_filter = ('action', 'user')
+    search_fields = ('user__username', 'ip_address')
+    readonly_fields = ('user', 'action', 'ip_address', 'timestamp')
