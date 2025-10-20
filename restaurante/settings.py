@@ -94,7 +94,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'restaurante_db',
         'USER': 'root',
-        'PASSWORD': 'Eve123',  
+        'PASSWORD': 'Evaristo-23',  
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
@@ -217,3 +217,18 @@ AXES_RESET_ON_SUCCESS = True # Resetea los intentos fallidos si el login es exit
 AXES_LOCKOUT_PARAMETERS = ["username"]
 AXES_LOCKOUT_TEMPLATE = 'usuarios/lockout.html'
 AXES_RESET_ON_SUCCESS = True
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# =============================
+# Configuración de correo real (Gmail SMTP)
+# =============================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Tu correo Gmail y contraseña de aplicación
+EMAIL_HOST_USER = 'pantojacarlos2003@gmail.com'
+EMAIL_HOST_PASSWORD = 'opkn hvmd jise hsub'
+
+# Dirección de envío por defecto
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
