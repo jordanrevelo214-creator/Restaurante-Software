@@ -47,7 +47,10 @@ class Usuario(AbstractUser):
     ]
     email = models.EmailField(unique=True)
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default='mesero')
-    REQUIRED_FIELDS = ['email']
+    REQUIRED_FIELDS = ['email', 'cedula']
+    cedula = models.CharField(max_length=10, unique=True, null=True, blank=True)
+    telefono = models.CharField(max_length=15, null=True, blank=True)
+    direccion = models.TextField(null=True, blank=True)
 
     # 👇 CONECTA EL MANAGER A TU MODELO 👇
     objects = UsuarioManager()

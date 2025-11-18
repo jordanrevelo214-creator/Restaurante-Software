@@ -1,26 +1,45 @@
-# 📁 usuarios/admin.py
+
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Usuario, AuditLog
 
 class CustomUserAdmin(UserAdmin):
-    # Esto es lo básico para que el admin reconozca tu campo 'rol'
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {'fields': ('rol',)}),
-    )
-    fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('rol',)}),
-    )
-    list_display = ('username', 'email', 'first_name', 'last_name', 'rol', 'is_staff')
+    model = Usuario
+    
+    # 1. QUÉ VER EN LA LISTA
+    list_display = ('username', 'email', 'rol', 'cedula', 'is_active')
+    list_filter = ('rol', 'is_active')
+    search_fields = ('username', 'email', 'cedula')
 
-# Registra tu modelo Usuario con esta configuración
+    # 2. PANTALLA DE EDICIÓN (Aquí SÍ mostramos todos tus campos personalizados)
+    fieldsets = UserAdmin.fieldsets + (
+        ('Información del Restaurante', {'fields': ('rol', 'cedula', 'telefono', 'direccion')}),
+    )
+    
+    # 3. PANTALLA DE CREACIÓN (ADD USER)
+    # Aquí usamos la configuración original de Django: Solo Usuario y Contraseña.
+    # Esto evita el error rojo. Una vez guardes, te dejará editar lo demás.
+    add_fieldsets = UserAdmin.add_fieldsets
+
+    # --- Acciones y Permisos ---
+    actions = ['desactivar_usuarios', 'activar_usuarios']
+
+    @admin.action(description='Desactivar usuarios')
+    def desactivar_usuarios(self, request, queryset):
+        queryset.update(is_active=False)
+
+    @admin.action(description='Reactivar usuarios')
+    def activar_usuarios(self, request, queryset):
+        queryset.update(is_active=True)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 admin.site.register(Usuario, CustomUserAdmin)
 
-# Registra el AuditLog para poder verlo en el panel
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ('user', 'action', 'ip_address', 'timestamp')
-    list_filter = ('action', 'user')
-    search_fields = ('user__username', 'ip_address')
-    readonly_fields = ('user', 'action', 'ip_address', 'timestamp')
+    list_display = ('user', 'action', 'timestamp')
+    def has_delete_permission(self, request, obj=None):
+        return False
