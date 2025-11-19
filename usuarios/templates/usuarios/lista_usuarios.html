@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Personal - El Rincón que No Conoces</title>
+    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard_gerente.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="fas fa-utensils"></i> El Rincón...
+        </div>
+        <div class="nav-links">
+            <a href="{% url 'usuarios:dashboard_gerente' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="#"><i class="fas fa-chart-line"></i> Reportes</a>
+            <a href="#" class="active"><i class="fas fa-users"></i> Personal</a>
+            <a href="{% url 'usuarios:logout' %}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header>
+            <h2>Gestión de Usuarios</h2>
+            <a href="{% url 'admin:usuarios_usuario_add' %}" target="_blank" class="btn-confirmar" style="width: auto; margin: 0; background: #f28500; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
+                + Nuevo Usuario
+            </a>
+        </header>
+
+        <section class="audit-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img src="https://ui-avatars.com/api/?name={{ u.username }}&background=random&color=fff" style="border-radius: 50%; width: 30px;">
+                                {{ u.username }}
+                            </div>
+                        </td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                            <span style="padding: 5px 10px; border-radius: 15px; font-size: 0.8em; 
+                                {% if u.rol == 'admin' %} background: #ffebee; color: #c62828; 
+                                {% elif u.rol == 'gerente' %} background: #e3f2fd; color: #1565c0;
+                                {% else %} background: #fff3e0; color: #ef6c00; {% endif %}">
+                                {{ u.get_rol_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if u.is_active %}
+                                <span style="color: green;">● Activo</span>
+                            {% else %}
+                                <span style="color: red;">● Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin:usuarios_usuario_change' u.id %}" target="_blank" style="color: #f28500; font-weight: bold; text-decoration: none;">
+                                Editar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

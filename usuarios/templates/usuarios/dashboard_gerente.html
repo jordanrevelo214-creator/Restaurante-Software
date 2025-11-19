@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerencia - DineTrack</title>
+    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard_gerente.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="fas fa-utensils"></i> El Rincon que No Conoces
+        </div>
+        <div class="nav-links">
+            <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="#"><i class="fas fa-chart-line"></i> Reportes</a>
+            <a href="{% url 'usuarios:lista_usuarios' %}"><i class="fas fa-users"></i> Personal</a>
+            <a href="{% url 'usuarios:logout' %}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header>
+            <div>
+                <h4>Hola, {{ user.first_name|default:user.username }} 👋</h4>
+                <h2>Panel de Control</h2>
+            </div>
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=f28500&color=fff" 
+                     style="border-radius: 50%; width: 35px;">
+                <span>Gerente</span>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                <div class="stat-info">
+                    <h4>Ventas de Hoy</h4>
+                    <h2>${{ total_ventas_hoy }}</h2>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-info">
+                    <h4>Usuarios Activos</h4>
+                    <h2>{{ usuarios_activos }} / {{ total_usuarios }}</h2>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clipboard-check"></i></div>
+                <div class="stat-info">
+                    <h4>Pedidos Completados</h4>
+                    <h2>--</h2> </div>
+            </div>
+        </div>
+
+        <section class="audit-section">
+            <h3>Actividad Reciente del Sistema</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Acción</th>
+                        <th>Fecha y Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in ultimos_logs %}
+                    <tr>
+                        <td><strong>{{ log.user.username|default:"Sistema" }}</strong></td>
+                        <td>{{ log.action }}</td>
+                        <td>{{ log.timestamp|date:"d M Y, H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3">No hay actividad reciente.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+</body>
+</html>

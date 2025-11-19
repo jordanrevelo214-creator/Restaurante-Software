@@ -45,6 +45,7 @@ class Usuario(AbstractUser):
         ('admin', 'Administrador'),
         ('mesero', 'Mesero'),
         ('cocina', 'Cocinero'),
+        ('gerente', 'Gerente'),
     ]
     email = models.EmailField(unique=True)
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default='mesero')

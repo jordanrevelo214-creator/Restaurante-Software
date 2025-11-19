@@ -1,4 +1,4 @@
-# 📁 pedidos/views.py
+
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -6,20 +6,30 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 import json
 from .models import Mesa, Pedido, Producto, DetallePedido
+from usuarios.models import AuditLog
 
-# 1. VISTA PARA VER LA MESA Y TOMAR PEDIDO
+# --- FUNCIÓN AUXILIAR ---
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+# --- VISTAS DEL MESERO ---
+
 @login_required
 def detalle_mesa(request, mesa_id):
-    # Obtenemos la mesa
     mesa = get_object_or_404(Mesa, pk=mesa_id)
     
-    # Buscamos si ya hay un pedido activo
+    # Buscamos si hay un pedido activo
     pedido_activo = Pedido.objects.filter(
         mesa=mesa, 
         estado__in=['borrador', 'confirmado', 'listo', 'entregado']
     ).first()
     
-    # Si no hay pedido, creamos uno nuevo
+    # Si no hay pedido y la mesa está libre, creamos uno nuevo
     if not pedido_activo:
         pedido_activo = Pedido.objects.create(
             mesa=mesa,
@@ -29,7 +39,6 @@ def detalle_mesa(request, mesa_id):
         mesa.estado = 'ocupada'
         mesa.save()
 
-    # Traemos el menú disponible
     productos = Producto.objects.filter(disponible=True)
 
     context = {
@@ -39,8 +48,6 @@ def detalle_mesa(request, mesa_id):
     }
     return render(request, 'pedidos/detalle_mesa.html', context)
 
-
-# 2. VISTA PARA AGREGAR UN PRODUCTO (USADA POR JAVASCRIPT)
 @require_POST
 def agregar_producto(request, pedido_id):
     data = json.loads(request.body)
@@ -49,7 +56,6 @@ def agregar_producto(request, pedido_id):
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     producto = get_object_or_404(Producto, pk=producto_id)
 
-    # Validamos Stock
     if producto.stock > 0:
         detalle, created = DetallePedido.objects.get_or_create(
             pedido=pedido,
@@ -61,7 +67,6 @@ def agregar_producto(request, pedido_id):
             detalle.cantidad += 1
             detalle.save()
         
-        # Restamos del stock
         producto.stock -= 1
         producto.save()
 
@@ -69,34 +74,72 @@ def agregar_producto(request, pedido_id):
     else:
         return JsonResponse({'success': False, 'message': 'No hay stock disponible'})
 
-
-# 3. VISTA PARA CONFIRMAR EL PEDIDO (ENVIAR A COCINA)
 @login_required
 def confirmar_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     
-    # Solo confirmamos si tiene productos
     if pedido.items.exists():
-        pedido.estado = 'confirmado' # Cambia el estado para que lo vea cocina
+        pedido.estado = 'confirmado'
         pedido.save()
-        return redirect('usuarios:dashboard_mesero') # Regresa al panel principal
+        
+        # LOG DE AUDITORÍA
+        AuditLog.objects.create(
+            user=request.user,
+            ip_address=get_client_ip(request),
+            action=f"Envió a cocina: Pedido #{pedido.id} (Mesa {pedido.mesa.numero})"
+        )
+        
+        return redirect('usuarios:dashboard_mesero')
     else:
         return redirect('pedidos:detalle_mesa', mesa_id=pedido.mesa.id)
+
+@login_required
+def pagar_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+
+    if pedido.estado in ['confirmado', 'listo', 'entregado']:
+        # 1. Marcar como pagado
+        pedido.estado = 'pagado'
+        pedido.save()
+        
+        # 2. Liberar mesa
+        mesa = pedido.mesa
+        mesa.estado = 'libre'
+        mesa.save()
+
+        # LOG DE AUDITORÍA
+        AuditLog.objects.create(
+            user=request.user,
+            ip_address=get_client_ip(request),
+            action=f"Cobró cuenta: Pedido #{pedido.id} - Total ${pedido.total}"
+        )
     
+    return redirect('usuarios:dashboard_mesero')
+
+# --- VISTAS DE COCINA ---
+
 @login_required
 def dashboard_cocina(request):
-    # Solo mostramos los pedidos que están "En Cocina" (confirmado)
-    # Los ordenamos por hora (el más viejo primero)
+    # Seguridad: Solo cocina o admin
+    if request.user.rol != 'cocina' and request.user.rol != 'admin':
+        return redirect('usuarios:login')
+
     pedidos = Pedido.objects.filter(estado='confirmado').order_by('created_at')
     return render(request, 'pedidos/dashboard_cocina.html', {'pedidos': pedidos})
 
-# 5. ACCIÓN PARA MARCAR COMO "LISTO"
 @login_required
 def terminar_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     
     if pedido.estado == 'confirmado':
-        pedido.estado = 'listo' # Cambia a 'Listo para Servir'
+        pedido.estado = 'listo'
         pedido.save()
+
+        # LOG DE AUDITORÍA
+        AuditLog.objects.create(
+            user=request.user,
+            ip_address=get_client_ip(request),
+            action=f"Cocina terminó: Pedido #{pedido.id}"
+        )
     
     return redirect('pedidos:dashboard_cocina')
