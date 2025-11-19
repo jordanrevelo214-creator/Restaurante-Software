@@ -44,6 +44,7 @@ class Usuario(AbstractUser):
     ROL_CHOICES = [
         ('admin', 'Administrador'),
         ('mesero', 'Mesero'),
+        ('cocina', 'Cocinero'),
     ]
     email = models.EmailField(unique=True)
     rol = models.CharField(max_length=10, choices=ROL_CHOICES, default='mesero')
@@ -52,7 +53,6 @@ class Usuario(AbstractUser):
     telefono = models.CharField(max_length=15, null=True, blank=True)
     direccion = models.TextField(null=True, blank=True)
 
-    # 👇 CONECTA EL MANAGER A TU MODELO 👇
     objects = UsuarioManager()
 
     def __str__(self):
@@ -69,4 +69,5 @@ class AuditLog(models.Model):
     def __str__(self):
         user_display = self.user.username if self.user else "Anonymous"
         return f'{user_display} - {self.action} at {self.timestamp.strftime("%Y-%m-%d %H:%M")}'  # Se pide al crear superusuario
+    
     

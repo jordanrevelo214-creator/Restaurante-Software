@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor de Cocina</title>
+    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard.css' %}">
+    <style>
+        /* Estilos rápidos para el tablero de cocina */
+        .cocina-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .comanda-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .comanda-header {
+            background: #333;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .comanda-items li {
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 5px;
+        }
+        .btn-listo {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+        }
+        .btn-listo:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" style="background-color: #333; color: white;">
+        <div class="brand">👨‍🍳 Cocina - Pedidos Pendientes</div>
+        <a href="{% url 'usuarios:logout' %}" class="logout-btn" style="background: #555;">Salir</a>
+    </nav>
+
+    <div class="cocina-grid">
+        {% for pedido in pedidos %}
+        <div class="comanda-card">
+            <div class="comanda-header">
+                <strong>Mesa {{ pedido.mesa.numero }}</strong>
+                <span>#{{ pedido.id }}</span>
+            </div>
+            
+            <ul class="comanda-items">
+                {% for item in pedido.items.all %}
+                <li>
+                    <strong>{{ item.cantidad }}x</strong> {{ item.producto.nombre }}
+                    {% if item.observacion %}
+                        <br><small style="color: red;">({{ item.observacion }})</small>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div style="color: gray; font-size: 0.8em; margin-top: 10px;">
+                Mesero: {{ pedido.mesero.username }} <br>
+                Hora: {{ pedido.created_at|date:"H:i" }}
+            </div>
+
+            <a href="{% url 'pedidos:terminar_pedido' pedido.id %}" class="btn-listo">
+                ✅ MARCAR LISTO
+            </a>
+        </div>
+        {% empty %}
+            <h2 style="grid-column: 1/-1; text-align: center; color: gray;">
+                No hay pedidos pendientes. ¡A limpiar! 🧹
+            </h2>
+        {% endfor %}
+    </div>
+
+    <script>
+        setTimeout(function(){
+           window.location.reload(1);
+        }, 10000);
+    </script>
+</body>
+</html>
