@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'core',
     'usuarios',
     'pedidos',
+    'inventario',
 ]
 
 MIDDLEWARE = [

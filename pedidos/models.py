@@ -1,4 +1,5 @@
 
+
 from django.db import models
 from django.conf import settings
 
@@ -24,6 +25,17 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"{self.nombre} - ${self.precio}"
+
+    # 👇 ESTA ES LA FUNCIÓN QUE FALTABA PARA EL COSTEO
+    @property
+    def costo_elaboracion(self):
+        """Suma el costo de todos los ingredientes de la receta"""
+        total = 0
+        # 'receta' es el related_name definido en inventario/models.py
+        for ingrediente in self.receta.all():
+            if ingrediente.insumo:
+                total += ingrediente.cantidad_necesaria * ingrediente.insumo.costo_unitario
+        return total
 
 # 3. PEDIDO (La cuenta)
 class Pedido(models.Model):
