@@ -7,8 +7,9 @@ from django.http import JsonResponse
 import json
 from .models import Mesa, Pedido, Producto, DetallePedido
 from usuarios.models import AuditLog
+from inventario.models import MovimientoKardex 
 
-# --- FUNCIÓN AUXILIAR ---
+# --- FUNCIÓN AUXILIAR PARA LA IP ---
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
@@ -67,6 +68,7 @@ def agregar_producto(request, pedido_id):
             detalle.cantidad += 1
             detalle.save()
         
+        # Resta stock del PRODUCTO (venta)
         producto.stock -= 1
         producto.save()
 
@@ -82,12 +84,35 @@ def confirmar_pedido(request, pedido_id):
         pedido.estado = 'confirmado'
         pedido.save()
         
-        # LOG DE AUDITORÍA
+        # 1. LOG DE AUDITORÍA
         AuditLog.objects.create(
             user=request.user,
             ip_address=get_client_ip(request),
             action=f"Envió a cocina: Pedido #{pedido.id} (Mesa {pedido.mesa.numero})"
         )
+
+        # 2. DESCARGA DE INVENTARIO (RECETAS)
+        for detalle in pedido.items.all():
+            producto = detalle.producto
+            cantidad_vendida = detalle.cantidad
+
+            if producto.receta.exists():
+                for item_receta in producto.receta.all():
+                    insumo = item_receta.insumo
+                    cantidad_a_descontar = item_receta.cantidad_necesaria * cantidad_vendida
+                    
+                    # Restamos del stock del INSUMO
+                    insumo.stock_actual -= cantidad_a_descontar
+                    insumo.save()
+
+                    # Guardamos en Kardex
+                    MovimientoKardex.objects.create(
+                        insumo=insumo,
+                        tipo='salida',
+                        cantidad=cantidad_a_descontar,
+                        costo_total=cantidad_a_descontar * insumo.costo_unitario,
+                        observacion=f"Venta Pedido #{pedido.id}: {producto.nombre} x{cantidad_vendida}"
+                    )
         
         return redirect('usuarios:dashboard_mesero')
     else:
@@ -120,7 +145,6 @@ def pagar_pedido(request, pedido_id):
 
 @login_required
 def dashboard_cocina(request):
-    # Seguridad: Solo cocina o admin
     if request.user.rol != 'cocina' and request.user.rol != 'admin':
         return redirect('usuarios:login')
 
@@ -143,3 +167,4 @@ def terminar_pedido(request, pedido_id):
         )
     
     return redirect('pedidos:dashboard_cocina')
+
