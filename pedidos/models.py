@@ -50,6 +50,7 @@ class Pedido(models.Model):
 
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, related_name='pedidos')
     mesero = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    cliente = models.ForeignKey('clientes.Cliente', on_delete=models.SET_NULL, null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='borrador')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
