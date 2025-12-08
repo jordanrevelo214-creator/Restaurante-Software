@@ -1,0 +1,27 @@
+{% if clientes %}
+    <ul style="list-style: none; padding: 0; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; background: white; position: absolute; width: 90%; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        {% for cliente in clientes %}
+            <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <div style="text-align: left;">
+                    <strong>{{ cliente.nombres }}</strong><br>
+                    <small style="color: gray;">{{ cliente.numero_documento }}</small>
+                </div>
+                
+                <button 
+                    type="button" 
+                    class="btn-add" 
+                    style="width: auto; padding: 5px 15px; background: #007bff; margin: 0; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                    hx-post="{% url 'clientes:asignar_cliente' pedido_id cliente.id %}"
+                    hx-target="#cliente-seleccionado"
+                    hx-swap="innerHTML"
+                    onclick="setTimeout(() => { document.getElementById('resultados-busqueda').innerHTML = ''; }, 200)">
+                    Seleccionar
+                </button>
+            </li>
+        {% endfor %}
+    </ul>
+{% elif request.GET.q %}
+    <div style="padding: 10px; color: #777; font-style: italic; background: white; border: 1px solid #ddd; position: absolute; width: 90%; z-index: 100;">
+        No se encontraron clientes.
+    </div>
+{% endif %}

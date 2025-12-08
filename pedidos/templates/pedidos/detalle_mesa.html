@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa {{ mesa.numero }}</title>
+    
+    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'pedidos/css/detalle_mesa.css' %}">
+
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+</head>
+<body>
+
+    <div id="data-container" 
+         data-pedido-id="{{ pedido.id }}" 
+         data-csrf="{{ csrf_token }}" 
+         style="display: none;">
+    </div>
+
+    <nav class="navbar">
+        <div class="brand">Mesa {{ mesa.numero }}</div>
+        <a href="{% url 'usuarios:dashboard_mesero' %}" class="logout-btn">Volver</a>
+    </nav>
+
+    <div class="menu-container">
+        <div class="menu-list">
+            {% for producto in productos %}
+            <div class="product-card">
+                <h3>{{ producto.nombre }}</h3>
+                <p>${{ producto.precio }}</p>
+                <button class="btn-add" data-id="{{ producto.id }}" onclick="agregarProducto(this.getAttribute('data-id'))">Agregar +</button>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="order-summary">
+            <h2>Pedido #{{ pedido.id }}</h2>
+            <p>Mesero: {{ pedido.mesero.username }}</p>
+            <hr>
+            
+            <ul id="order-items">
+                {% for item in pedido.items.all %}
+                    <li>{{ item.cantidad }}x {{ item.producto.nombre }} - ${{ item.subtotal }}</li>
+                {% empty %}
+                    <p style="color: #777;">La cuenta está vacía.</p>
+                {% endfor %}
+            </ul>
+            <hr>
+
+            <div id="seccion-cliente" style="margin-bottom: 20px; padding: 10px; background: #f9f9f9; border-radius: 8px;">
+                <h4 style="margin-top: 0;">Cliente:</h4>
+                
+                <div id="cliente-seleccionado" style="margin-bottom: 10px;">
+                    {% if pedido.cliente %}
+                        <div style="background: #e8f5e9; color: #2e7d32; padding: 8px; border-radius: 5px; font-weight: bold;">
+                            {{ pedido.cliente.nombres }}
+                        </div>
+                    {% else %}
+                        <span style="color: #777;">Consumidor Final</span>
+                    {% endif %}
+                </div>
+
+                <input type="text" 
+                       name="q" 
+                       placeholder="Buscar por Nombre o Cédula..." 
+                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"
+                       hx-get="{% url 'clientes:buscar_cliente' %}" 
+                       hx-vals='{"pedido_id": "{{ pedido.id }}"}'
+                       hx-trigger="keyup changed delay:500ms" 
+                       hx-target="#resultados-busqueda">
+                
+                <div id="resultados-busqueda" style="position: relative;"></div>
+            </div>
+
+            <h3>Total: ${{ pedido.total }}</h3>
+
+            {% if pedido.estado == 'borrador' %}
+                {% if pedido.items.exists %}
+                    <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" class="btn-confirmar">
+                        Enviar a Cocina
+                    </a>
+                {% endif %}
+            {% elif pedido.estado in 'confirmado,listo,entregado' %}
+                <div style="margin-top: 20px; padding: 10px; background: #e8f5e9; border-radius: 5px; color: #2e7d32; text-align: center;">
+                    Enviado a cocina
+                </div>
+                <a href="{% url 'pedidos:pagar_pedido' pedido.id %}" class="btn-confirmar" style="background-color: #28a745;">
+                    Cerrar Cuenta y Pagar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script src="{% static 'pedidos/js/detalle_mesa.js' %}"></script>
+
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+
+</body>
+</html>

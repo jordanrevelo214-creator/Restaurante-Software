@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'core',
     'usuarios',
     'pedidos',
+    'inventario',
+    'clientes',
 ]
 
 MIDDLEWARE = [
@@ -91,15 +93,12 @@ AUTHENTICATION_BACKENDS = [
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'restaurante_db',
         'USER': 'root',
         'PASSWORD': 'Evaristo-23',  
         'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+        'PORT': '5432',
     }
 }
 
@@ -156,56 +155,70 @@ LOGOUT_REDIRECT_URL = '/usuarios/login/' # Con esto redirije a mi pagina de logi
 LOGIN_REDIRECT_URL = '/'
 
 # Configuracion de Jazzmin
+
 JAZZMIN_SETTINGS = {
-    # Título de la ventana del navegador
+    # Títulos y Logos
     "site_title": "Restaurante Admin",
-
-    # Título en la cabecera
     "site_header": "Restaurante App",
-
-    # Texto en la barra lateral
     "site_brand": "Restaurante App",
-
-    # Logo para la marca (opcional)
-    # "site_logo": "usuarios/images/logo.png", # Ruta a tu logo en una carpeta static
-
-    # --- Interfaz de Usuario ---
-    "theme": "flatly", # Un tema limpio y claro
+    "welcome_sign": "Bienvenido al Panel de Control",
+    "copyright": "El Rincón que No Conoces",
     
+    # Menú lateral
+    "search_model": ["usuarios.Usuario", "pedidos.Pedido"],
 
-    "ui_tweaks": {
-        "navbar_small_text": False,
-        "footer_small_text": False,
-        "body_small_text": False,
-        "brand_small_text": False,
-        "brand_colour": "navbar-warning", # Usa un color predefinido para la marca
-        "accent": "accent-warning",
-        "navbar": "navbar-warning navbar-dark",
-        "no_navbar_border": False,
-        "sidebar": "sidebar-dark-warning", # Barra lateral oscura con acentos naranjas
-        "sidebar_nav_small_text": False,
-        "sidebar_disable_expand": False,
-        "sidebar_nav_child_indent": False,
-        "sidebar_nav_compact_style": False,
-        "sidebar_nav_legacy_style": False,
-        "sidebar_nav_flat_style": True,
-        "theme": "flatly",
-        "actions_sticky_top": True
-        
-    },
-
-    # --- Personalizar el Menú de la Barra Lateral ---
-    "order_with_respect_to": ["usuarios", "pedidos"], # Ordena tus apps
-
+    # Iconos (Puedes añadir más aquí)
     "icons": {
         "auth": "fas fa-users-cog",
         "usuarios.Usuario": "fas fa-user",
-        "auth.Group": "fas fa-users",
-        "pedidos.Pedido": "fas fa-receipt", 
+        "usuarios.AuditLog": "fas fa-clipboard-list", # Icono de auditoría
+        "pedidos.Mesa": "fas fa-chair",
+        "pedidos.Producto": "fas fa-utensils",
+        "pedidos.Pedido": "fas fa-receipt",
     },
-    # Redireccionar a mi login 
-        "login_url": "usuarios:login",
-        "logout_url": "usuarios:logout",
+    
+    # Orden del menú lateral
+    "order_with_respect_to": ["pedidos", "usuarios", "auth"],
+
+    # Opciones de interfaz
+    "show_ui_builder": True, # <-- ¡Esto te dejará probar colores en vivo!
+}
+
+JAZZMIN_UI_TWEAKS = {
+    # --- ESTILO GENERAL (Blanco y Limpio como en la foto) ---
+    "theme": "litera", # Un tema con fuentes limpias y fondo blanco
+    # "theme": "flatly", # Otra opción buena si 'litera' no te convence
+    
+    # --- BARRA SUPERIOR (Blanca limpia) ---
+    "navbar": "navbar-white navbar-light",
+    
+    # --- BARRA LATERAL (Blanca con acentos naranjas) ---
+    "sidebar": "sidebar-light-warning", 
+    # Nota: 'warning' es el código de color para el Naranja en estos temas.
+    
+    # --- COLORES DE ACENTO (Botones y selectores naranjas) ---
+    "accent": "accent-warning",
+    "brand_colour": "navbar-warning",
+    
+    # --- DETALLES ---
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "button_classes": {
+        "primary": "btn-warning", # Botones principales naranjas
+        "secondary": "btn-outline-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
 }
 
 # Configuración de AXES
@@ -217,3 +230,18 @@ AXES_RESET_ON_SUCCESS = True # Resetea los intentos fallidos si el login es exit
 AXES_LOCKOUT_PARAMETERS = ["username"]
 AXES_LOCKOUT_TEMPLATE = 'usuarios/lockout.html'
 AXES_RESET_ON_SUCCESS = True
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# =============================
+# Configuración de correo real (Gmail SMTP)
+# =============================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Tu correo Gmail y contraseña de aplicación
+EMAIL_HOST_USER = 'pantojacarlos2003@gmail.com'
+EMAIL_HOST_PASSWORD = 'opkn hvmd jise hsub'
+
+# Dirección de envío por defecto
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
