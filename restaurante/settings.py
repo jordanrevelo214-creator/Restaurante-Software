@@ -95,8 +95,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'restaurante_db',
-        'USER': 'root',
-        'PASSWORD': 'Evaristo-23',  
+        'USER': 'postgres',
+        'PASSWORD': 'Eve123',  
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
@@ -245,3 +245,12 @@ EMAIL_HOST_PASSWORD = 'opkn hvmd jise hsub'
 
 # Dirección de envío por defecto
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Cierra la sesión si el navegador se cierra
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Tiempo de vida de la cookie (en segundos). 900 seg = 15 minutos.
+SESSION_COOKIE_AGE = 900
+
+# Para que el contador se reinicie cada vez que el usuario hace clic en algo
+SESSION_SAVE_EVERY_REQUEST = True
