@@ -102,3 +102,94 @@ def lista_usuarios(request):
         
     usuarios = Usuario.objects.all().order_by('username')
     return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios})
+# 5. PASSWORD RESET REQUEST (solicitar reseteo con EMAIL)
+def password_reset_request(request):
+    if request.method == 'POST':
+        identifier = request.POST.get('identifier')
+        
+        try:
+            # Buscar usuario por username o email
+            user = Usuario.objects.get(Q(username=identifier) | Q(email=identifier))
+            
+            # Generar token
+            from django.contrib.auth.tokens import default_token_generator
+            from django.utils.http import urlsafe_base64_encode
+            from django.utils.encoding import force_bytes
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            # Crear el link de reseteo
+            reset_link = request.build_absolute_uri(
+                f'/usuarios/password-reset-confirm/{uid}/{token}/'
+            )
+            
+            # Enviar email
+            subject = 'Recuperación de Contraseña - Restaurante'
+            message = f'''
+Hola {user.username},
+
+Recibimos una solicitud para restablecer tu contraseña.
+
+Haz clic en el siguiente enlace para crear una nueva contraseña:
+{reset_link}
+
+Si no solicitaste este cambio, puedes ignorar este mensaje.
+
+Saludos,
+Equipo del Restaurante
+            '''
+            
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
+                messages.success(request, f'Se ha enviado un correo a {user.email} con las instrucciones para restablecer tu contraseña.')
+            except Exception as e:
+                messages.error(request, f'Error al enviar el correo: {str(e)}')
+                
+        except Usuario.DoesNotExist:
+            # Por seguridad, mostramos el mismo mensaje aunque el usuario no exista
+            messages.success(request, 'Si el usuario existe, recibirás un correo con las instrucciones.')
+    
+    return render(request, 'usuarios/password_reset.html')
+
+# 6. PASSWORD RESET CONFIRM (cambiar contraseña)
+def password_reset_confirm(request, uidb64, token):
+    from django.utils.http import urlsafe_base64_decode
+    from django.contrib.auth.tokens import default_token_generator
+    
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = Usuario.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, Usuario.DoesNotExist):
+        user = None
+    
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+            
+            if new_password and confirm_password:
+                if len(new_password) < 6:
+                    messages.error(request, 'La contraseña debe tener al menos 6 caracteres.')
+                elif new_password == confirm_password:
+                    user.set_password(new_password)
+                    user.save()
+                    messages.success(request, '¡Contraseña cambiada exitosamente! Ya puedes iniciar sesión.')
+                    return redirect('usuarios:login')
+                else:
+                    messages.error(request, 'Las contraseñas no coinciden.')
+            else:
+                messages.error(request, 'Por favor completa ambos campos.')
+        
+        return render(request, 'usuarios/password_reset_confirm.html', {'validlink': True, 'user': user})
+    else:
+        messages.error(request, 'El enlace de reseteo es inválido o ha expirado.')
+        return render(request, 'usuarios/password_reset_confirm.html', {'validlink': False})
