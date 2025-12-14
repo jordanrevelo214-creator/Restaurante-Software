@@ -1,0 +1,45 @@
+{% if not pedidos %}
+<div style="text-align: center; width: 100%; margin-top: 50px; color: #999;">
+    <i class="fas fa-mug-hot" style="font-size: 3rem; margin-bottom: 15px;"></i>
+    <h2>Todo tranquilo</h2>
+    <p>No hay pedidos pendientes en este momento.</p>
+</div>
+{% endif %}
+
+{% for pedido in pedidos %}
+<div class="card-pedido" style="background: white; border: 1px solid #ddd; border-radius: 12px; width: 300px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+    
+    <div style="background-color: #ff9800; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
+        <span><i class="fas fa-utensils"></i> Mesa {{ pedido.mesa.numero }}</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">#{{ pedido.id }}</span>
+    </div>
+
+    <div style="padding: 15px;">
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for item in pedido.items.all %}
+            <li style="border-bottom: 1px dashed #eee; padding: 8px 0; display: flex; gap: 10px;">
+                <strong style="color: #ff9800; font-size: 1.1rem;">{{ item.cantidad }}x</strong>
+                <div>
+                    {{ item.producto.nombre }}
+                    {% if item.notas %}
+                        <br><small style="color: #d32f2f; font-style: italic;">* {{ item.notas }}</small>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <div style="margin-top: 15px; font-size: 0.8rem; color: #888; border-top: 1px solid #eee; padding-top: 10px;">
+            <i class="fas fa-clock"></i> Hora: {{ pedido.created_at|date:"H:i" }} <br>
+            <i class="fas fa-user"></i> Mesero: {{ pedido.mesero.username }}
+        </div>
+    </div>
+
+    <div style="padding: 10px; background: #f9f9f9; text-align: center;">
+        <a href="{% url 'pedidos:terminar_pedido' pedido.id %}" 
+           style="background-color: #4CAF50; color: white; padding: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; display: block; transition: 0.2s;">
+            <i class="fas fa-check-circle"></i> MARCAR LISTO
+        </a>
+    </div>
+</div>
+{% endfor %}

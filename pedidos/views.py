@@ -6,12 +6,13 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 import json
+from django.views.decorators.http import etag
 
-# --- IMPORTACIONES CORRECTAS DE MODELOS ---
-# Quitamos 'PedidoItem' y nos aseguramos de usar 'DetallePedido'
+
 from .models import Mesa, Pedido, Producto, DetallePedido
 from usuarios.models import AuditLog
 from inventario.models import MovimientoKardex 
+
 # --- FUNCIÓN AUXILIAR PARA LA IP ---
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -206,3 +207,25 @@ def modificar_cantidad_item(request, item_id, accion):
         'mesa': pedido.mesa
     }
     return render(request, 'pedidos/partials/orden_actual.html', context)
+
+def cocina_etag(request, *args, **kwargs):
+    # Buscamos el último pedido modificado o creado
+    ultimo_pedido = Pedido.objects.filter(estado='confirmado').order_by('-updated_at').first()
+    conteo = Pedido.objects.filter(estado='confirmado').count()
+    
+    if ultimo_pedido:
+        # La huella es: Cantidad de pedidos + Fecha del último cambio
+        return str(conteo) + str(ultimo_pedido.updated_at)
+    else:
+        return "0"
+
+# Con esto logramos que la cocina se actualice cada cierto tiempo 
+
+@login_required
+@etag(cocina_etag)
+def actualizar_cocina(request):
+   
+    # Buscamos SOLO los pedidos 'confirmado' (pendientes de cocinar)
+    # Ordenamos por antigüedad (el más viejo primero)
+    pedidos = Pedido.objects.filter(estado='confirmado').order_by('created_at')
+    return render(request, 'pedidos/partials/lista_pedidos_cocina.html', {'pedidos': pedidos})

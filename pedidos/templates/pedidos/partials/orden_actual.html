@@ -46,34 +46,31 @@
     </div>
 
     <div class="order-footer">
-        <div class="summary-row">
-            <span>Subtotal</span>
-            <span>${{ pedido.total }}</span>
-        </div>
-        <div class="summary-row">
-            <span>Impuestos (0%)</span>
-            <span>$0.00</span>
-        </div>
-        <div class="total-row">
-            <span>Total</span>
-            <span class="total-orange">${{ pedido.total }}</span>
-        </div>
-
-        {% if pedido.estado == 'borrador' and pedido.items.exists %}
-            <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" style="text-decoration: none;">
-                <button class="btn-confirm">
-                    Confirmar Pedido <i class="fas fa-check"></i>
-                </button>
-            </a>
-        {% elif pedido.estado != 'borrador' %}
-            <button class="btn-confirm" style="background: #10B981; cursor: default;">
-                 Enviado a Cocina / Pagado
+    {% if pedido.estado == 'borrador' and pedido.items.exists %}
+        <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" style="text-decoration: none;">
+            <button class="btn-confirm">
+                Confirmar Pedido <i class="fas fa-check"></i>
             </button>
-        {% endif %}
+        </a>
 
-        <div class="action-buttons">
-            <a href="#" onclick="window.close()" class="btn-secondary">Volver</a>
-            <a href="#" onclick="window.close()" class="btn-secondary cancel-text">Cancelar</a>
+    {% elif pedido.estado == 'confirmado' or pedido.estado == 'listo' %}
+        
+        <div style="text-align: center; margin-bottom: 10px; font-weight: bold; color: {% if pedido.estado == 'listo' %}#10B981{% else %}#F59E0B{% endif %};">
+            {% if pedido.estado == 'listo' %}
+                <i class="fas fa-bell"></i> ¡Orden Lista para Servir!
+            {% else %}
+                <i class="fas fa-clock"></i> Cocinando...
+            {% endif %}
         </div>
+
+        <a href="{% url 'pedidos:pagar_pedido' pedido.id %}" style="text-decoration: none;">
+            <button class="btn-confirm" style="background: #111827;"> Cobrar y Liberar Mesa <i class="fas fa-cash-register"></i>
+            </button>
+        </a>
+
+    {% endif %}
+
+    <div class="action-buttons">
+        <a href="#" onclick="window.close()" class="btn-secondary">Cerrar Ventana</a>
     </div>
 </div>
