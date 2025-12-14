@@ -9,6 +9,11 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone 
 from .models import Usuario, AuditLog
 from pedidos.models import Pedido, Mesa
+from pedidos.models import Producto
+import csv
+from django.http import HttpResponse
+from pedidos.models import Pedido 
+from inventario.models import Insumo
 
 # 1. LOGIN
 def login_view(request):
@@ -102,3 +107,58 @@ def lista_usuarios(request):
         
     usuarios = Usuario.objects.all().order_by('username')
     return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios})
+
+@login_required
+def gestion_menu(request):
+    # Seguridad: Solo gerentes o admins
+    if request.user.rol != 'gerente' and request.user.rol != 'admin':
+        return redirect('usuarios:login')
+
+    # Traemos todos los productos
+    productos = Producto.objects.all().order_by('nombre')
+    
+    return render(request, 'usuarios/gestion_menu.html', {'productos': productos})
+
+@login_required
+def reportes_ventas(request):
+    # Seguridad: Solo Gerentes o Admins
+    if request.user.rol != 'gerente' and request.user.rol != 'admin':
+        return redirect('usuarios:login')
+
+    # Obtener pedidos pagados
+    pedidos = Pedido.objects.filter(estado='pagado').order_by('-created_at')
+    total_ingresos = sum(p.total for p in pedidos)
+
+    # Lógica de Exportación a Excel (CSV)
+    if 'exportar' in request.GET:
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="reporte_ventas.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Fecha', 'Mesa', 'Mesero', 'Total'])
+        
+        for p in pedidos:
+            writer.writerow([
+                p.id, 
+                p.created_at.strftime("%d/%m/%Y %H:%M"), 
+                f"Mesa {p.mesa.numero}", 
+                p.mesero.username, 
+                p.total
+            ])
+        return response
+
+    return render(request, 'usuarios/reportes.html', {
+        'pedidos': pedidos, 
+        'total_ingresos': total_ingresos
+    })
+
+@login_required
+def gestion_inventario(request):
+    # Seguridad
+    if request.user.rol != 'gerente' and request.user.rol != 'admin':
+        return redirect('usuarios:login')
+
+    # Traemos todos los insumos ordenados por nombre
+    insumos = Insumo.objects.all().order_by('nombre')
+    
+    return render(request, 'usuarios/gestion_inventario.html', {'insumos': insumos})

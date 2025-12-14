@@ -3,103 +3,109 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa {{ mesa.numero }}</title>
-    
-    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard.css' %}">
+    <title>Tomar Pedido - Mesa {{ mesa.numero }}</title>
     <link rel="stylesheet" href="{% static 'pedidos/css/detalle_mesa.css' %}">
-
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 </head>
 <body>
 
-    <div id="data-container" 
-         data-pedido-id="{{ pedido.id }}" 
-         data-csrf="{{ csrf_token }}" 
-         style="display: none;">
-    </div>
+    <div id="data-container" data-pedido-id="{{ pedido.id }}" data-csrf="{{ csrf_token }}" style="display: none;"></div>
 
-    <nav class="navbar">
-        <div class="brand">Mesa {{ mesa.numero }}</div>
-        <a href="{% url 'usuarios:dashboard_mesero' %}" class="logout-btn">Volver</a>
-    </nav>
-
-    <div class="menu-container">
-        <div class="menu-list">
-            {% for producto in productos %}
-            <div class="product-card">
-                <h3>{{ producto.nombre }}</h3>
-                <p>${{ producto.precio }}</p>
-                <button class="btn-add" data-id="{{ producto.id }}" onclick="agregarProducto(this.getAttribute('data-id'))">Agregar +</button>
-            </div>
-            {% endfor %}
+    <div class="tablet-container">
+        
+        <div class="header">
+            <h1>Tomar pedido mesa</h1>
         </div>
 
-        <div class="order-summary">
-            <h2>Pedido #{{ pedido.id }}</h2>
-            <p>Mesero: {{ pedido.mesero.username }}</p>
-            <hr>
-            
-            <ul id="order-items">
-                {% for item in pedido.items.all %}
-                    <li>{{ item.cantidad }}x {{ item.producto.nombre }} - ${{ item.subtotal }}</li>
-                {% empty %}
-                    <p style="color: #777;">La cuenta está vacía.</p>
-                {% endfor %}
-            </ul>
-            <hr>
-
-            <div id="seccion-cliente" style="margin-bottom: 20px; padding: 10px; background: #f9f9f9; border-radius: 8px;">
-                <h4 style="margin-top: 0;">Cliente:</h4>
+        <div class="main-body">
+            <div class="left-panel">
                 
-                <div id="cliente-seleccionado" style="margin-bottom: 10px;">
-                    {% if pedido.cliente %}
-                        <div style="background: #e8f5e9; color: #2e7d32; padding: 8px; border-radius: 5px; font-weight: bold;">
-                            {{ pedido.cliente.nombres }}
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Número de la mesa</label>
+                        <select disabled>
+                            <option>Mesa {{ mesa.numero }}</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Estado de la mesa</label>
+                        <select disabled>
+                            <option>{{ mesa.get_estado_display }}</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Agregar items (comida)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" placeholder="Buscar 🔍">
+                            <button style="padding: 10px; cursor: pointer;">Buscar</button>
                         </div>
-                    {% else %}
-                        <span style="color: #777;">Consumidor Final</span>
-                    {% endif %}
+                    </div>
                 </div>
 
-                <input type="text" 
-                       name="q" 
-                       placeholder="Buscar por Nombre o Cédula..." 
-                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"
-                       hx-get="{% url 'clientes:buscar_cliente' %}" 
-                       hx-vals='{"pedido_id": "{{ pedido.id }}"}'
-                       hx-trigger="keyup changed delay:500ms" 
-                       hx-target="#resultados-busqueda">
-                
-                <div id="resultados-busqueda" style="position: relative;"></div>
+                <div class="product-list-container">
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; padding: 0 15px;">
+                        <span>Item</span><span>Precio</span>
+                    </div>
+
+                    {% for producto in productos %}
+                    <div class="product-item">
+                        <div style="font-weight: bold;">{{ producto.nombre }}</div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span>${{ producto.precio }}</span>
+                            <button class="btn-add" data-id="{{ producto.id }}" onclick="agregarProducto(this.getAttribute('data-id'))" style="width: auto;">Agregar</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
-            <h3>Total: ${{ pedido.total }}</h3>
-
-            {% if pedido.estado == 'borrador' %}
-                {% if pedido.items.exists %}
-                    <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" class="btn-confirmar">
-                        Enviar a Cocina
-                    </a>
-                {% endif %}
-            {% elif pedido.estado in 'confirmado,listo,entregado' %}
-                <div style="margin-top: 20px; padding: 10px; background: #e8f5e9; border-radius: 5px; color: #2e7d32; text-align: center;">
-                    Enviado a cocina
+            <div class="right-panel">
+                <div class="ticket-header">
+                    Item <span style="float: right;">Precio</span>
                 </div>
-                <a href="{% url 'pedidos:pagar_pedido' pedido.id %}" class="btn-confirmar" style="background-color: #28a745;">
-                    Cerrar Cuenta y Pagar
-                </a>
-            {% endif %}
+
+                <ul class="ticket-items" id="order-items">
+                    {% for item in pedido.items.all %}
+                        <li>
+                            <span>{{ item.producto.nombre }} <small>x{{ item.cantidad }}</small></span>
+                            <span>${{ item.subtotal }}</span>
+                        </li>
+                    {% empty %}
+                        <p style="text-align: center; color: #999;">Pedido vacío</p>
+                    {% endfor %}
+                </ul>
+
+                <div class="total-section">
+                    <div class="total-row">
+                        <span>Total</span>
+                        <span>${{ pedido.total }}</span>
+                    </div>
+
+                    {% if pedido.estado == 'borrador' %}
+                        {% if pedido.items.exists %}
+                            <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" class="btn-confirmar">
+                                < Confirmar Pedido
+                            </a>
+                        {% endif %}
+                    {% elif pedido.estado in 'confirmado,listo,entregado' %}
+                        <a href="{% url 'pedidos:pagar_pedido' pedido.id %}" class="btn-confirmar" style="background: #28a745; color: white; border: none;">
+                            Cerrar Cuenta ($)
+                        </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'usuarios:dashboard_mesero' %}" style="display: block; text-align: center; margin-top: 15px; color: #666; text-decoration: none;">Cancelar / Volver</a>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script src="{% static 'pedidos/js/detalle_mesa.js' %}"></script>
-
     <script>
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
         });
     </script>
-
 </body>
 </html>
