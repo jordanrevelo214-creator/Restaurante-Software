@@ -1,0 +1,79 @@
+<div id="zona-pedido" class="right-panel">
+    
+    <div class="order-header">
+        <div>
+            <h3 class="order-title">Orden Actual</h3>
+            <small class="order-id">Pedido #{{ pedido.id }}</small>
+        </div>
+        <span class="order-badge">Mesa {{ mesa.numero }}</span>
+    </div>
+
+    <div class="order-list">
+        {% for item in pedido.items.all %}
+        <div class="order-item">
+            <div class="qty-vertical">
+                <button class="qty-btn" 
+                        hx-get="{% url 'pedidos:modificar_cantidad' item.id 'sumar' %}" 
+                        hx-target="#zona-pedido" 
+                        hx-swap="outerHTML">
+                    +
+                </button>
+                
+                <span class="qty-val">{{ item.cantidad }}</span>
+                
+                <button class="qty-btn" 
+                        hx-get="{% url 'pedidos:modificar_cantidad' item.id 'restar' %}" 
+                        hx-target="#zona-pedido" 
+                        hx-swap="outerHTML">
+                    -
+                </button>
+            </div>
+
+            <div class="item-info">
+                <span class="item-name">{{ item.producto.nombre }}</span>
+                <span class="item-notes">
+                    </span>
+            </div>
+            
+            <span class="item-total">${{ item.subtotal }}</span>
+        </div>
+        {% empty %}
+        <div style="text-align: center; color: #9CA3AF; margin-top: 50px;">
+            <i class="fas fa-shopping-basket" style="font-size: 3rem; opacity: 0.2;"></i>
+            <p>La orden está vacía</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="order-footer">
+        <div class="summary-row">
+            <span>Subtotal</span>
+            <span>${{ pedido.total }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Impuestos (0%)</span>
+            <span>$0.00</span>
+        </div>
+        <div class="total-row">
+            <span>Total</span>
+            <span class="total-orange">${{ pedido.total }}</span>
+        </div>
+
+        {% if pedido.estado == 'borrador' and pedido.items.exists %}
+            <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" style="text-decoration: none;">
+                <button class="btn-confirm">
+                    Confirmar Pedido <i class="fas fa-check"></i>
+                </button>
+            </a>
+        {% elif pedido.estado != 'borrador' %}
+            <button class="btn-confirm" style="background: #10B981; cursor: default;">
+                 Enviado a Cocina / Pagado
+            </button>
+        {% endif %}
+
+        <div class="action-buttons">
+            <a href="#" onclick="window.close()" class="btn-secondary">Volver</a>
+            <a href="#" onclick="window.close()" class="btn-secondary cancel-text">Cancelar</a>
+        </div>
+    </div>
+</div>

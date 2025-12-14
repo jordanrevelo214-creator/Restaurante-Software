@@ -217,11 +217,11 @@
 
                 <div style="margin-top: 10px;">
                     {% if mesa.estado == 'libre' %}
-                        <a href="{% url 'pedidos:detalle_mesa' mesa.id %}" class="btn-action">
+                        <a href="#" onclick="return abrirPOS('{% url 'pedidos:detalle_mesa' mesa.id %}')" class="btn-action">
                             <i class="fas fa-plus"></i> Asignar Cliente
                         </a>
                     {% else %}
-                         <a href="{% url 'pedidos:detalle_mesa' mesa.id %}" class="btn-action btn-secondary">
+                         <a href="#" onclick="return abrirPOS('{% url 'pedidos:detalle_mesa' mesa.id %}')" class="btn-action btn-secondary">
                             <i class="fas fa-eye"></i> Ver Pedido
                         </a>
                     {% endif %}
@@ -254,6 +254,19 @@
                     item.style.display = item.classList.contains(estado) ? "flex" : "none";
                 }
             }
+        }
+    </script>
+
+    <script>
+        function abrirPOS(url) {
+            // Dimensiones ideales para parecer una app de tablet
+            const ancho = 1200;
+            const alto = 800;
+            const izquierda = (screen.width - ancho) / 2;
+            const arriba = (screen.height - alto) / 2;
+            
+            window.open(url, 'SistemaPOS', `width=${ancho},height=${alto},top=${arriba},left=${izquierda},scrollbars=yes,resizable=yes`);
+            return false; // Evita que el enlace recargue la página de fondo
         }
     </script>
 

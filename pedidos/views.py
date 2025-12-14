@@ -1,14 +1,17 @@
 
 
+# 📁 pedidos/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 import json
+
+# --- IMPORTACIONES CORRECTAS DE MODELOS ---
+# Quitamos 'PedidoItem' y nos aseguramos de usar 'DetallePedido'
 from .models import Mesa, Pedido, Producto, DetallePedido
 from usuarios.models import AuditLog
 from inventario.models import MovimientoKardex 
-
 # --- FUNCIÓN AUXILIAR PARA LA IP ---
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -49,14 +52,14 @@ def detalle_mesa(request, mesa_id):
     }
     return render(request, 'pedidos/detalle_mesa.html', context)
 
-@require_POST
-def agregar_producto(request, pedido_id):
-    data = json.loads(request.body)
-    producto_id = data.get('producto_id')
-
+@login_required
+def agregar_producto(request, pedido_id, producto_id):
+    
+    # 1. Buscamos los objetos con los IDs que vienen de la URL
     pedido = get_object_or_404(Pedido, pk=pedido_id)
     producto = get_object_or_404(Producto, pk=producto_id)
 
+    # 2. Lógica de inventario
     if producto.stock > 0:
         detalle, created = DetallePedido.objects.get_or_create(
             pedido=pedido,
@@ -68,13 +71,19 @@ def agregar_producto(request, pedido_id):
             detalle.cantidad += 1
             detalle.save()
         
-        # Resta stock del PRODUCTO (venta)
+        # Restar stock
         producto.stock -= 1
         producto.save()
+        
+        # (Opcional) Si necesitas recalcular total manual:
+        # pedido.calcular_total() 
 
-        return JsonResponse({'success': True, 'message': 'Producto agregado', 'nuevo_total': pedido.total})
-    else:
-        return JsonResponse({'success': False, 'message': 'No hay stock disponible'})
+    # 3. Respuesta: Devolvemos el HTML del panel derecho actualizado
+    context = {
+        'pedido': pedido,
+        'mesa': pedido.mesa
+    }
+    return render(request, 'pedidos/partials/orden_actual.html', context)
 
 @login_required
 def confirmar_pedido(request, pedido_id):
@@ -168,3 +177,32 @@ def terminar_pedido(request, pedido_id):
     
     return redirect('pedidos:dashboard_cocina')
 
+# --- NUEVA VISTA PARA HTMX (+/- CANTIDAD) ---
+
+@login_required
+def modificar_cantidad_item(request, item_id, accion):
+    # CORREGIDO: Usamos 'DetallePedido' en lugar de 'PedidoItem'
+    item = get_object_or_404(DetallePedido, id=item_id)
+    pedido = item.pedido
+    
+    if pedido.estado == 'borrador':
+        if accion == 'sumar':
+            item.cantidad += 1
+            item.save()
+        elif accion == 'restar':
+            item.cantidad -= 1
+            if item.cantidad <= 0:
+                item.delete()
+            else:
+                item.save()
+        
+        # Si tienes lógica para recalcular el total en el modelo, se ejecutará al guardar
+        # o puedes forzarlo aquí si es necesario:
+        # pedido.calcular_total() 
+    
+    # Devolvemos el HTML parcial para HTMX
+    context = {
+        'pedido': pedido,
+        'mesa': pedido.mesa
+    }
+    return render(request, 'pedidos/partials/orden_actual.html', context)
