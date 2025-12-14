@@ -31,8 +31,6 @@
 
             <div class="item-info">
                 <span class="item-name">{{ item.producto.nombre }}</span>
-                <span class="item-notes">
-                    </span>
             </div>
             
             <span class="item-total">${{ item.subtotal }}</span>
@@ -45,32 +43,43 @@
         {% endfor %}
     </div>
 
-    <div class="order-footer">
-    {% if pedido.estado == 'borrador' and pedido.items.exists %}
-        <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" style="text-decoration: none;">
-            <button class="btn-confirm">
-                Confirmar Pedido <i class="fas fa-check"></i>
-            </button>
-        </a>
-
-    {% elif pedido.estado == 'confirmado' or pedido.estado == 'listo' %}
-        
-        <div style="text-align: center; margin-bottom: 10px; font-weight: bold; color: {% if pedido.estado == 'listo' %}#10B981{% else %}#F59E0B{% endif %};">
-            {% if pedido.estado == 'listo' %}
-                <i class="fas fa-bell"></i> ¡Orden Lista para Servir!
-            {% else %}
-                <i class="fas fa-clock"></i> Cocinando...
-            {% endif %}
+    <div style="padding: 15px 20px; border-top: 1px dashed #ddd;">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.2rem;">
+            <span>Total:</span>
+            <span>${{ pedido.total }}</span>
         </div>
+    </div>
 
-        <a href="{% url 'pedidos:pagar_pedido' pedido.id %}" style="text-decoration: none;">
-            <button class="btn-confirm" style="background: #111827;"> Cobrar y Liberar Mesa <i class="fas fa-cash-register"></i>
+    <div class="order-footer">
+        
+        {% if pedido.estado == 'borrador' and pedido.items.exists %}
+            <a href="{% url 'pedidos:confirmar_pedido' pedido.id %}" style="text-decoration: none;">
+                <button class="btn-confirm">
+                    Confirmar Pedido <i class="fas fa-check"></i>
+                </button>
+            </a>
+
+        {% elif pedido.estado == 'confirmado' or pedido.estado == 'listo' %}
+            
+            <div style="text-align: center; margin-bottom: 10px; font-weight: bold; color: {% if pedido.estado == 'listo' %}#10B981{% else %}#F59E0B{% endif %};">
+                {% if pedido.estado == 'listo' %}
+                    <i class="fas fa-bell"></i> ¡Orden Lista para Servir!
+                {% else %}
+                    <i class="fas fa-clock"></i> Cocinando...
+                {% endif %}
+            </div>
+
+            <button class="btn-confirm" style="background: #111827;"
+                    hx-get="{% url 'pedidos:modal_cobrar' pedido.id %}"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML">
+                Cobrar y Facturar <i class="fas fa-cash-register"></i>
             </button>
-        </a>
 
-    {% endif %}
+        {% endif %}
 
-    <div class="action-buttons">
-        <a href="#" onclick="window.close()" class="btn-secondary">Cerrar Ventana</a>
+        <div class="action-buttons">
+            <a href="#" onclick="window.close()" class="btn-secondary">Cerrar Ventana</a>
+        </div>
     </div>
 </div>

@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import path, include
 from django.views.generic import RedirectView
+from django.urls import path, include
 urlpatterns = [
     path('', RedirectView.as_view(url='/usuarios/login/')),  # ← Esta línea redirige / a login
     path('admin/', admin.site.urls),

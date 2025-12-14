@@ -7,9 +7,10 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 import json
 from django.views.decorators.http import etag
+from django.utils import timezone
 
-
-from .models import Mesa, Pedido, Producto, DetallePedido
+from clientes.models import Cliente
+from .models import Pedido, Producto, DetallePedido, Mesa, Factura
 from usuarios.models import AuditLog
 from inventario.models import MovimientoKardex 
 
@@ -23,6 +24,14 @@ def get_client_ip(request):
     return ip
 
 # --- VISTAS DEL MESERO ---
+
+# 👇👇👇 ESTA ES LA VISTA NUEVA QUE FALTABA 👇👇👇
+@login_required
+def panel_mesas(request):
+    # Traemos todas las mesas ordenadas por su número
+    mesas = Mesa.objects.all().order_by('numero')
+    return render(request, 'pedidos/panel_mesas.html', {'mesas': mesas})
+# 👆👆👆 FIN DE LO NUEVO 👆👆👆
 
 @login_required
 def detalle_mesa(request, mesa_id):
@@ -75,9 +84,6 @@ def agregar_producto(request, pedido_id, producto_id):
         # Restar stock
         producto.stock -= 1
         producto.save()
-        
-        # (Opcional) Si necesitas recalcular total manual:
-        # pedido.calcular_total() 
 
     # 3. Respuesta: Devolvemos el HTML del panel derecho actualizado
     context = {
@@ -197,10 +203,6 @@ def modificar_cantidad_item(request, item_id, accion):
             else:
                 item.save()
         
-        # Si tienes lógica para recalcular el total en el modelo, se ejecutará al guardar
-        # o puedes forzarlo aquí si es necesario:
-        # pedido.calcular_total() 
-    
     # Devolvemos el HTML parcial para HTMX
     context = {
         'pedido': pedido,
@@ -229,3 +231,52 @@ def actualizar_cocina(request):
     # Ordenamos por antigüedad (el más viejo primero)
     pedidos = Pedido.objects.filter(estado='confirmado').order_by('created_at')
     return render(request, 'pedidos/partials/lista_pedidos_cocina.html', {'pedidos': pedidos})
+
+
+@login_required
+def modal_cobrar(request, pedido_id):
+    # Buscamos el pedido para mostrar el total
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+    return render(request, 'pedidos/modals/cobrar.html', {'pedido': pedido})
+
+@login_required
+def procesar_pago(request, pedido_id):
+    if request.method == 'POST':
+        pedido = get_object_or_404(Pedido, pk=pedido_id)
+        cliente_id = request.POST.get('cliente_id')
+        
+        # 1. Obtener Cliente (si enviaron uno)
+        cliente = None
+        if cliente_id:
+            cliente = get_object_or_404(Cliente, pk=cliente_id)
+            
+        # 2. Crear la Factura (Snapshot de datos)
+        # Si no hay cliente, usamos datos genéricos de Consumidor Final
+        datos_factura = {
+            'pedido': pedido,
+            'cliente': cliente,
+            'subtotal': pedido.total, 
+            'total': pedido.total,
+            'metodo_pago': 'efectivo', 
+            'razon_social': cliente.nombres if cliente else 'CONSUMIDOR FINAL',
+            'ruc_ci': cliente.cedula_o_ruc if cliente else '9999999999999',
+            'direccion': cliente.direccion if cliente else '',
+            'correo': cliente.email if cliente else ''
+        }
+        
+        factura = Factura.objects.create(**datos_factura)
+        
+        # 3. Actualizar Estados
+        pedido.estado = 'pagado'
+        pedido.save()
+        
+        mesa = pedido.mesa
+        mesa.estado = 'libre'
+        mesa.save()
+        
+        # 4. Redirigir al Ticket
+        return redirect('pedidos:ver_ticket', factura_id=factura.id)
+
+def ver_ticket(request, factura_id):
+    factura = get_object_or_404(Factura, pk=factura_id)
+    return render(request, 'pedidos/ticket.html', {'factura': factura})
