@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reportes - El Rincón que No Conoces</title>
+    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard_gerente.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">
+            <i class="fas fa-utensils"></i> El Rincón...
+        </div>
+        <div class="nav-links">
+            <a href="{% url 'usuarios:dashboard_gerente' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="{% url 'usuarios:gestion_menu' %}"><i class="fas fa-hamburger"></i> Menú</a>
+            <a href="#" class="active"><i class="fas fa-chart-line"></i> Reportes</a>
+            <a href="{% url 'usuarios:lista_usuarios' %}"><i class="fas fa-users"></i> Personal</a>
+            <a href="{% url 'usuarios:logout' %}"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header>
+            <h2>Reporte de Ventas</h2>
+            <a href="?exportar=true" class="btn-confirmar" style="width: auto; margin: 0; background: #28a745; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
+                <i class="fas fa-file-excel"></i> Exportar a Excel
+            </a>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                <div class="stat-info">
+                    <h4>Ingresos Totales (Histórico)</h4>
+                    <h2>${{ total_ingresos }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <section class="audit-section">
+            <h3>Historial de Pedidos Pagados</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Mesa</th>
+                        <th>Mesero</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pedidos %}
+                    <tr>
+                        <td>#{{ p.id }}</td>
+                        <td>{{ p.created_at|date:"d M Y, H:i" }}</td>
+                        <td>Mesa {{ p.mesa.numero }}</td>
+                        <td>{{ p.mesero.username }}</td>
+                        <td style="font-weight: bold; color: #28a745;">${{ p.total }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">No hay ventas registradas aún.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

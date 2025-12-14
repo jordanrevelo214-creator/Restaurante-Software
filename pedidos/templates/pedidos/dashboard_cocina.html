@@ -6,6 +6,11 @@
     <title>Monitor de Cocina</title>
     <link rel="stylesheet" href="{% static 'usuarios/css/dashboard.css' %}">
     <style>
+        body {
+            background: linear-gradient(135deg, #FF8C00, #FFA500);
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
         /* Estilos rápidos para el tablero de cocina */
         .cocina-grid {
             display: grid;
@@ -15,13 +20,13 @@
         }
         .comanda-card {
             background: white;
-            border: 2px solid #ddd;
+            border: 2px solid #FF8C00;
             border-radius: 8px;
             padding: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(255, 140, 0, 0.3);
         }
         .comanda-header {
-            background: #333;
+            background: #FF8C00;
             color: white;
             padding: 10px;
             border-radius: 5px;
@@ -36,26 +41,53 @@
             padding-bottom: 5px;
         }
         .btn-listo {
-            width: 100%;
+            width: 90%;
             padding: 10px;
             background-color: #28a745;
             color: white;
             border: none;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: 15px auto 0 auto;
             border-radius: 5px;
             text-decoration: none;
             display: block;
             text-align: center;
         }
         .btn-listo:hover { background-color: #218838; }
+        
+        .navbar {
+            background-color: white !important;
+            color: #FF8C00;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .brand {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #FF8C00;
+        }
+        .logout-btn {
+            background: #FF8C00 !important;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .logout-btn:hover {
+            background: #E67E00 !important;
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar" style="background-color: #333; color: white;">
+    <nav class="navbar">
         <div class="brand">👨‍🍳 Cocina - Pedidos Pendientes</div>
-        <a href="{% url 'usuarios:logout' %}" class="logout-btn" style="background: #555;">Salir</a>
+        <a href="{% url 'usuarios:logout' %}" class="logout-btn">Salir</a>
     </nav>
 
     <div class="cocina-grid">
@@ -71,7 +103,7 @@
                 <li>
                     <strong>{{ item.cantidad }}x</strong> {{ item.producto.nombre }}
                     {% if item.observacion %}
-                        <br><small style="color: red;">({{ item.observacion }})</small>
+                        <br><small style="color: #FF5722;">({{ item.observacion }})</small>
                     {% endif %}
                 </li>
                 {% endfor %}
@@ -87,7 +119,7 @@
             </a>
         </div>
         {% empty %}
-            <h2 style="grid-column: 1/-1; text-align: center; color: gray;">
+            <h2 style="grid-column: 1/-1; text-align: center; color: white;">
                 No hay pedidos pendientes. ¡A limpiar! 🧹
             </h2>
         {% endfor %}

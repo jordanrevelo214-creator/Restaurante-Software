@@ -15,6 +15,8 @@
         </div>
         <div class="nav-links">
             <a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="{% url 'usuarios:gestion_menu' %}"><i class="fas fa-hamburger"></i> Menú</a>
+            <a href="{% url 'usuarios:gestion_inventario' %}"><i class="fas fa-boxes"></i> Inventario</a>
             <a href="#"><i class="fas fa-chart-line"></i> Reportes</a>
             <a href="{% url 'usuarios:lista_usuarios' %}"><i class="fas fa-users"></i> Personal</a>
             <a href="{% url 'usuarios:logout' %}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>

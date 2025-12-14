@@ -1,0 +1,80 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventario - El Rincón que No Conoces</title>
+    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard_gerente.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo"><i class="fas fa-utensils"></i> El Rincón...</div>
+        <div class="nav-links">
+            <a href="{% url 'usuarios:dashboard_gerente' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="{% url 'usuarios:gestion_menu' %}"><i class="fas fa-hamburger"></i> Menú</a>
+            <a href="#" class="active"><i class="fas fa-boxes"></i> Inventario</a>
+            <a href="{% url 'usuarios:reportes_ventas' %}"><i class="fas fa-chart-line"></i> Reportes</a>
+            <a href="{% url 'usuarios:lista_usuarios' %}"><i class="fas fa-users"></i> Personal</a>
+            <a href="{% url 'usuarios:logout' %}"><i class="fas fa-sign-out-alt"></i> Salir</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header>
+            <h2>Control de Insumos</h2>
+            <a href="{% url 'admin:inventario_movimientokardex_add' %}" target="_blank" class="btn-confirmar" style="width: auto; margin: 0; background: #28a745; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
+                + Registrar Compra (Entrada)
+            </a>
+        </header>
+
+        <section class="audit-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Insumo</th>
+                        <th>Unidad</th>
+                        <th>Costo Promedio</th>
+                        <th>Stock Actual</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in insumos %}
+                    <tr>
+                        <td><strong>{{ i.nombre }}</strong></td>
+                        <td>{{ i.get_unidad_medida_display }}</td>
+                        <td>${{ i.costo_unitario }}</td>
+                        
+                        <td style="font-weight: bold; font-size: 1.1em; 
+                            {% if i.stock_actual <= i.stock_minimo %} color: #c62828; {% else %} color: #2b3674; {% endif %}">
+                            {{ i.stock_actual }}
+                        </td>
+
+                        <td>
+                            {% if i.stock_actual <= i.stock_minimo %}
+                                <span style="background: #ffebee; color: #c62828; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">
+                                    ⚠️ BAJO STOCK
+                                </span>
+                            {% else %}
+                                <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">
+                                    OK
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin:inventario_insumo_change' i.id %}" target="_blank" style="color: #f28500; text-decoration: none; font-weight: bold;">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6">No hay insumos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

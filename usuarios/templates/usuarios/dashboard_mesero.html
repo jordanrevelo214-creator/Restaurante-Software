@@ -4,46 +4,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Mesero</title>
-    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Listado de Mesas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- ESTILOS EXACTOS DE TU DISEÑO --- */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            color: #1f2937;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: white;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .brand { 
+            color: #f97316; /* Naranja */
+            font-weight: 800; 
+            font-size: 1.2rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            text-decoration: none;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header h1 { font-size: 2rem; margin: 0 0 5px 0; font-weight: 700; }
+        .header p { color: #6b7280; margin: 0 0 30px 0; }
+
+        /* BARRA DE HERRAMIENTAS */
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: center;
+        }
+
+        .search-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        .search-container input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #e5e7eb;
+            color: #4b5563;
+            transition: 0.2s;
+        }
+        .filter-btn.active {
+            background-color: #f97316; /* Naranja */
+            color: white;
+        }
+        .filter-btn:hover:not(.active) { background-color: #d1d5db; }
+
+        /* TARJETAS DE MESA (LISTA) */
+        .mesa-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            transition: transform 0.2s;
+        }
+        .mesa-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+
+        .mesa-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mesa-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .capacity { font-size: 0.9rem; color: #6b7280; font-weight: normal; }
+
+        /* Estado (Punto y Texto) */
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; }
+        .text-status { font-weight: 600; font-size: 0.9rem; margin-top: 5px; display: block; }
+
+        /* Colores */
+        .libre .status-dot { background-color: #22c55e; }
+        .libre .text-status { color: #22c55e; }
+        
+        .ocupada .status-dot { background-color: #f97316; }
+        .ocupada .text-status { color: #f97316; }
+
+        /* Botón de Acción */
+        .btn-action {
+            background-color: #f97316;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+            display: inline-block;
+            width: fit-content;
+            transition: 0.2s;
+        }
+        .btn-action:hover { background-color: #ea580c; }
+        
+        /* Botón secundario para mesas ocupadas */
+        .btn-secondary {
+            background-color: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover { background-color: #f3f4f6; }
+
+    </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="brand">Restaurante App</div>
-        <div class="user-info">
-            <span><i class="fas fa-user"></i> Bienvenido, {{ user.first_name|default:user.username }}</span>
-            <a href="{% url 'usuarios:logout' %}" class="logout-btn">Cerrar Sesión</a>
+        <a href="#" class="brand"><i class="fas fa-utensils"></i> Restaurante Ficticio</a>
+        <div class="user-profile">
+            <span>{{ user.username }}</span>
+            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=0D8ABC&color=fff" class="user-avatar">
+            <a href="{% url 'usuarios:logout' %}" style="color: #6b7280; margin-left: 10px;"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </nav>
 
-    <main class="dashboard-container">
-        <div class="dashboard-header">
-            <h1>Panel de Control</h1>
-            <p>Selecciona una mesa para gestionar un pedido o ver su estado.</p>
+    <div class="container">
+        <div class="header">
+            <h1>Listado de Mesas</h1>
+            <p>Gestiona el estado de las mesas en tiempo real.</p>
         </div>
 
-        <section class="tables-section">
-            <h2>Mesas Asignadas</h2>
-            <div class="tables-grid">
+        <div class="toolbar">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="buscador" placeholder="Buscar por número de mesa..." onkeyup="filtrar()">
+            </div>
+            <button class="filter-btn active" onclick="filtrarEstado('todas', this)">Todas</button>
+            <button class="filter-btn" onclick="filtrarEstado('libre', this)">Libres</button>
+            <button class="filter-btn" onclick="filtrarEstado('ocupada', this)">Ocupadas</button>
+        </div>
+
+        <div id="grid-mesas">
+            {% for mesa in mesas %}
+            <div class="mesa-card item-mesa {{ mesa.estado }}">
                 
-                {% for mesa in mesas %}
-                    <a href="{% url 'pedidos:detalle_mesa' mesa.id %}" style="text-decoration: none; color: inherit;">
-                        
-                        <div class="table-card status-{{ mesa.estado }}">
-                            <div class="table-number">{{ mesa.numero }}</div>
-                            <div class="table-status">{{ mesa.get_estado_display }}</div>
-                        </div>
-
-                    </a>
-                {% empty %}
-                    <p>No hay mesas registradas. Pide al administrador que las cree.</p>
-                {% endfor %}
+                <div class="mesa-header">
+                    <div class="mesa-title">
+                        <span class="status-dot {{ mesa.estado }}"></span>
+                        Mesa {{ mesa.numero }}
+                        <span class="capacity"><i class="fas fa-user-group"></i> {{ mesa.capacidad }}</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #9ca3af;"></i>
                 </div>
-        </section>
 
-    </main>
+                <div>
+                    <span style="color: #6b7280; font-size: 0.9rem;">Estado:</span>
+                    <span class="text-status {{ mesa.estado }}">
+                        {{ mesa.get_estado_display }}
+                    </span>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    {% if mesa.estado == 'libre' %}
+                        <a href="#" onclick="return abrirPOS('{% url 'pedidos:detalle_mesa' mesa.id %}')" class="btn-action">
+                            <i class="fas fa-plus"></i> Asignar Cliente
+                        </a>
+                    {% else %}
+                         <a href="#" onclick="return abrirPOS('{% url 'pedidos:detalle_mesa' mesa.id %}')" class="btn-action btn-secondary">
+                            <i class="fas fa-eye"></i> Ver Pedido
+                        </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function filtrar() {
+            let input = document.getElementById('buscador').value.toLowerCase();
+            let items = document.getElementsByClassName('item-mesa');
+            for (let item of items) {
+                let texto = item.innerText.toLowerCase();
+                item.style.display = texto.includes(input) ? "flex" : "none";
+            }
+        }
+
+        function filtrarEstado(estado, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            let items = document.getElementsByClassName('item-mesa');
+            for (let item of items) {
+                if (estado === 'todas') {
+                    item.style.display = "flex";
+                } else {
+                    item.style.display = item.classList.contains(estado) ? "flex" : "none";
+                }
+            }
+        }
+    </script>
+
+    <script>
+        function abrirPOS(url) {
+            // Dimensiones ideales para parecer una app de tablet
+            const ancho = 1200;
+            const alto = 800;
+            const izquierda = (screen.width - ancho) / 2;
+            const arriba = (screen.height - alto) / 2;
+            
+            window.open(url, 'SistemaPOS', `width=${ancho},height=${alto},top=${arriba},left=${izquierda},scrollbars=yes,resizable=yes`);
+            return false; // Evita que el enlace recargue la página de fondo
+        }
+    </script>
 
 </body>
 </html>
