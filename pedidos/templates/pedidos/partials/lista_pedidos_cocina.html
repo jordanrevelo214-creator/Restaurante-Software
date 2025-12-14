@@ -1,45 +1,166 @@
 {% if not pedidos %}
-<div style="text-align: center; width: 100%; margin-top: 50px; color: #999;">
-    <i class="fas fa-mug-hot" style="font-size: 3rem; margin-bottom: 15px;"></i>
-    <h2>Todo tranquilo</h2>
-    <p>No hay pedidos pendientes en este momento.</p>
+<div style="grid-column: 1/-1; text-align: center; margin-top: 100px; color: #9CA3AF;">
+    <i class="fas fa-check-circle" style="font-size: 4rem; color: #10B981; margin-bottom: 20px; opacity: 0.5;"></i>
+    <h2 style="color: #4B5563; font-weight: 800;">¡Todo limpio, Chef!</h2>
+    <p>No hay comandas pendientes por ahora.</p>
 </div>
 {% endif %}
 
 {% for pedido in pedidos %}
-<div class="card-pedido" style="background: white; border: 1px solid #ddd; border-radius: 12px; width: 300px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+<div class="kitchen-card" style="opacity: 0; animation: slideIn 0.4s forwards;">
     
-    <div style="background-color: #ff9800; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: bold;">
-        <span><i class="fas fa-utensils"></i> Mesa {{ pedido.mesa.numero }}</span>
-        <span style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">#{{ pedido.id }}</span>
-    </div>
-
-    <div style="padding: 15px;">
-        <ul style="list-style: none; padding: 0; margin: 0;">
-            {% for item in pedido.items.all %}
-            <li style="border-bottom: 1px dashed #eee; padding: 8px 0; display: flex; gap: 10px;">
-                <strong style="color: #ff9800; font-size: 1.1rem;">{{ item.cantidad }}x</strong>
-                <div>
-                    {{ item.producto.nombre }}
-                    {% if item.notas %}
-                        <br><small style="color: #d32f2f; font-style: italic;">* {{ item.notas }}</small>
-                    {% endif %}
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
-        
-        <div style="margin-top: 15px; font-size: 0.8rem; color: #888; border-top: 1px solid #eee; padding-top: 10px;">
-            <i class="fas fa-clock"></i> Hora: {{ pedido.created_at|date:"H:i" }} <br>
-            <i class="fas fa-user"></i> Mesero: {{ pedido.mesero.username }}
+    <div class="card-header">
+        <div>
+            <span class="label-orden">ORDEN</span>
+            <h3 class="mesa-title">Mesa {{ pedido.mesa.numero }}</h3>
         </div>
+        <span class="badge-id">#{{ pedido.id }}</span>
     </div>
 
-    <div style="padding: 10px; background: #f9f9f9; text-align: center;">
-        <a href="{% url 'pedidos:terminar_pedido' pedido.id %}" 
-           style="background-color: #4CAF50; color: white; padding: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; display: block; transition: 0.2s;">
+    <div class="card-body">
+        {% for item in pedido.items.all %}
+        <div class="item-row">
+            <div class="qty-box">{{ item.cantidad }}</div>
+            
+            <div class="item-details">
+                <span class="item-name">{{ item.producto.nombre }}</span>
+                {% if item.notas %}
+                    <div class="item-note">
+                        <i class="fas fa-comment-alt"></i> {{ item.notas }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card-footer">
+        <div class="meta-info">
+            <span><i class="fas fa-user"></i> {{ pedido.mesero.first_name|default:pedido.mesero.username }}</span>
+            <span><i class="far fa-clock"></i> {{ pedido.created_at|date:"H:i" }}</span>
+        </div>
+
+        <a href="{% url 'pedidos:terminar_pedido' pedido.id %}" class="btn-ready">
             <i class="fas fa-check-circle"></i> MARCAR LISTO
         </a>
     </div>
 </div>
+
+<style>
+    .kitchen-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid #F3F4F6;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* Header */
+    .card-header {
+        padding: 20px 20px 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .label-orden {
+        font-size: 0.7rem;
+        color: #F97316;
+        font-weight: 800;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 2px;
+    }
+    .mesa-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #1F2937;
+        margin: 0;
+    }
+    .badge-id {
+        background: #FFEDD5; /* Naranja muy suave */
+        color: #EA580C;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    /* Body */
+    .card-body {
+        padding: 10px 20px 20px 20px;
+        flex: 1;
+    }
+    .item-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 12px;
+        border-bottom: 1px dashed #F3F4F6;
+        padding-bottom: 8px;
+    }
+    .item-row:last-child { border-bottom: none; }
+
+    .qty-box {
+        background: #FFF7ED;
+        color: #F97316;
+        font-weight: 800;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 1.1rem;
+    }
+    .item-name {
+        font-weight: 600;
+        color: #374151;
+        font-size: 1rem;
+        display: block;
+    }
+    .item-note {
+        font-size: 0.8rem;
+        color: #EF4444;
+        font-style: italic;
+        margin-top: 2px;
+    }
+
+    /* Footer */
+    .card-footer {
+        padding: 15px 20px 20px 20px;
+        background: #FAFAFA;
+        border-top: 1px solid #F3F4F6;
+    }
+    .meta-info {
+        display: flex;
+        justify-content: space-between;
+        color: #6B7280;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    .btn-ready {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #10B981; /* Verde vibrante */
+        color: white;
+        text-decoration: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: 0.2s;
+        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+    }
+    .btn-ready:hover {
+        background: #059669;
+        transform: translateY(-2px);
+    }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 {% endfor %}
