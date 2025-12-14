@@ -2,6 +2,8 @@
 
 from django.db import models
 from django.conf import settings
+from clientes.models import Cliente
+
 
 # 1. MESA
 class Mesa(models.Model):
@@ -77,3 +79,48 @@ class DetallePedido(models.Model):
     @property
     def subtotal(self):
         return self.cantidad * self.precio_unitario
+
+# 5. FACTURA (Documento legal)
+class Factura(models.Model):
+    METODO_PAGO_CHOICES = [
+        ('efectivo', 'Efectivo'),
+        ('tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('transferencia', 'Transferencia Bancaria'),
+    ]
+
+    # Relación 1 a 1: Un pedido tiene una sola factura
+    pedido = models.OneToOneField(Pedido, on_delete=models.CASCADE, related_name='factura')
+    
+    # Relación con Cliente (Opcional, si es Consumidor Final)
+    cliente = models.ForeignKey('clientes.Cliente', on_delete=models.PROTECT, null=True, blank=True)
+    
+    # --- DATOS HISTÓRICOS (Snapshot) ---
+    # Guardamos estos datos aquí por si el cliente cambia sus datos en el futuro,
+    # la factura histórica no se altere.
+    razon_social = models.CharField(max_length=200, verbose_name="Nombre/Razón Social")
+    ruc_ci = models.CharField(max_length=13, verbose_name="RUC/CI")
+    direccion = models.CharField(max_length=200, blank=True, null=True)
+    correo = models.EmailField(blank=True, null=True)
+    
+    # --- MONTOS ---
+    fecha_emision = models.DateTimeField(auto_now_add=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    iva = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES, default='efectivo')
+
+    def __str__(self):
+        return f"Factura #{self.id} - {self.razon_social}"
+
+    def save(self, *args, **kwargs):
+        # Al guardar la factura, automáticamente marcamos el pedido como PAGADO
+        if not self.id: # Solo al crear
+            self.pedido.estado = 'pagado'
+            self.pedido.save()
+            
+            # También liberamos la mesa automáticamente
+            self.pedido.mesa.estado = 'libre'
+            self.pedido.mesa.save()
+            
+        super().save(*args, **kwargs)
