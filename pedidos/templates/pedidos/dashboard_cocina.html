@@ -3,132 +3,67 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Monitor de Cocina</title>
-    <link rel="stylesheet" href="{% static 'usuarios/css/dashboard.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cocina - Comandas en Vivo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://unpkg.com/idiomorph/dist/idiomorph-ext.min.js"></script>
+    
     <style>
-        body {
-            background: linear-gradient(135deg, #FF8C00, #FFA500);
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        /* Estilos rápidos para el tablero de cocina */
-        .cocina-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-        .comanda-card {
-            background: white;
-            border: 2px solid #FF8C00;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(255, 140, 0, 0.3);
-        }
-        .comanda-header {
-            background: #FF8C00;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-        .comanda-items li {
-            margin-bottom: 8px;
-            font-size: 1.1em;
-            border-bottom: 1px dashed #eee;
-            padding-bottom: 5px;
-        }
-        .btn-listo {
-            width: 90%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px auto 0 auto;
-            border-radius: 5px;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-        }
-        .btn-listo:hover { background-color: #218838; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
         
-        .navbar {
-            background-color: white !important;
-            color: #FF8C00;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        .header { 
+            background-color: white; 
+            padding: 15px 30px; 
+            border-radius: 12px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
         }
-        .brand {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #FF8C00;
+        
+        .grid-pedidos { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 20px; 
+            align-items: flex-start;
         }
-        .logout-btn {
-            background: #FF8C00 !important;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: background 0.3s;
+
+        /* Animación suave SOLO para elementos nuevos */
+        .card-pedido { 
+            animation: fadeIn 0.5s ease-out; 
+            transition: all 0.3s ease; /* Transición suave si se mueven */
         }
-        .logout-btn:hover {
-            background: #E67E00 !important;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="brand">👨‍🍳 Cocina - Pedidos Pendientes</div>
-        <a href="{% url 'usuarios:logout' %}" class="logout-btn">Salir</a>
-    </nav>
 
-    <div class="cocina-grid">
-        {% for pedido in pedidos %}
-        <div class="comanda-card">
-            <div class="comanda-header">
-                <strong>Mesa {{ pedido.mesa.numero }}</strong>
-                <span>#{{ pedido.id }}</span>
-            </div>
-            
-            <ul class="comanda-items">
-                {% for item in pedido.items.all %}
-                <li>
-                    <strong>{{ item.cantidad }}x</strong> {{ item.producto.nombre }}
-                    {% if item.observacion %}
-                        <br><small style="color: #FF5722;">({{ item.observacion }})</small>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-
-            <div style="color: gray; font-size: 0.8em; margin-top: 10px;">
-                Mesero: {{ pedido.mesero.username }} <br>
-                Hora: {{ pedido.created_at|date:"H:i" }}
-            </div>
-
-            <a href="{% url 'pedidos:terminar_pedido' pedido.id %}" class="btn-listo">
-                ✅ MARCAR LISTO
-            </a>
+    <div class="header">
+        <h1 style="margin: 0; color: #333; font-size: 1.5rem;">
+            <i class="fas fa-fire" style="color: #ff9800;"></i> Cocina - Pedidos Pendientes
+        </h1>
+        <div style="font-size: 0.9rem; color: #666; display: flex; align-items: center; gap: 8px;">
+            <span class="fa-stack" style="font-size: 0.8rem;">
+                <i class="fas fa-circle fa-stack-2x" style="color: #e0f2f1;"></i>
+                <i class="fas fa-wifi fa-stack-1x" style="color: #009688;"></i>
+            </span>
+            En vivo
         </div>
-        {% empty %}
-            <h2 style="grid-column: 1/-1; text-align: center; color: white;">
-                No hay pedidos pendientes. ¡A limpiar! 🧹
-            </h2>
-        {% endfor %}
+        <a href="{% url 'usuarios:logout' %}" style="color: #d32f2f; text-decoration: none; font-weight: bold;">Salir</a>
     </div>
 
-    <script>
-        setTimeout(function(){
-           window.location.reload(1);
-        }, 10000);
-    </script>
+    <div class="grid-pedidos"
+         hx-ext="morph"
+         hx-get="{% url 'pedidos:actualizar_cocina' %}"
+         hx-trigger="every 5s"
+         hx-swap="morph:innerHTML">
+        
+        {% include 'pedidos/partials/lista_pedidos_cocina.html' %}
+
+    </div>
+
 </body>
 </html>
