@@ -59,3 +59,5 @@ Sigue estos pasos para levantar el proyecto en tu máquina local.
 ```bash
 git clone [https://github.com/jordanrevelo214-creator/Restaurante-Software.git](https://github.com/jordanrevelo214-creator/Restaurante-Software.git)
 cd Restaurante-Software
+
+cambio minimo en read.md 
