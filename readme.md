@@ -1,4 +1,4 @@
-# 🍽️ Sistema de Gestión de Restaurante "El Rincón que No Conoces"
+# 🍽️ Sistema de Gestión de Restaurante "El Rincón que Sí Conoces"
 
 Sistema integral web desarrollado en **Django** para la administración operativa y gerencial de un restaurante. Incluye control de inventario, punto de venta (POS) para meseros, monitor de cocina (KDS) y dashboard gerencial con reportes.
 
