@@ -52,7 +52,10 @@ class Usuario(AbstractUser):
     REQUIRED_FIELDS = ['email', 'cedula']
     cedula = models.CharField(max_length=10, unique=True, null=True, blank=True)
     telefono = models.CharField(max_length=15, null=True, blank=True)
+    cedula = models.CharField(max_length=10, unique=True, null=True, blank=True)
+    telefono = models.CharField(max_length=15, null=True, blank=True)
     direccion = models.TextField(null=True, blank=True)
+    last_activity = models.DateTimeField(null=True, blank=True) # Para control de Online/Offline
 
     objects = UsuarioManager()
 

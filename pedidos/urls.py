@@ -15,7 +15,14 @@ urlpatterns = [
     path('cocina/actualizar/', views.actualizar_cocina, name='actualizar_cocina'),
     path('pedido/<int:pedido_id>/cobrar/', views.modal_cobrar, name='modal_cobrar'),
     path('pedido/<int:pedido_id>/pagar/', views.procesar_pago, name='procesar_pago'),
+    path('pedido/<int:pedido_id>/comanda/', views.ver_comanda, name='ver_comanda'),
     path('factura/<int:factura_id>/ticket/', views.ver_ticket, name='ver_ticket'),
     path('', views.panel_mesas, name='panel_mesas'),
     
+    path('productos/nuevo/', views.crear_producto, name='crear_producto'),
+    path('productos/editar/<int:pk>/', views.editar_producto, name='editar_producto'),
+    path('productos/eliminar/<int:pk>/', views.eliminar_producto, name='eliminar_producto'),
+    path('productos/<int:producto_id>/receta/', views.gestion_receta, name='gestion_receta'),
+    path('receta/eliminar/<int:receta_id>/', views.eliminar_ingrediente, name='eliminar_ingrediente'),
+    path('check_notificaciones/', views.check_notificaciones, name='check_notificaciones'),
 ]

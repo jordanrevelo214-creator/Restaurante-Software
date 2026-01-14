@@ -1,12 +1,14 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Personal - El Rincón que No Conoces</title>
     <link rel="stylesheet" href="{% static 'usuarios/css/dashboard_gerente.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
+
 <body>
     <nav class="sidebar">
         <div class="logo">
@@ -15,7 +17,7 @@
         <div class="nav-links">
             <a href="{% url 'usuarios:dashboard_gerente' %}"><i class="fas fa-home"></i> Dashboard</a>
             <a href="{% url 'usuarios:gestion_menu' %}"><i class="fas fa-hamburger"></i> Menú</a>
-            <a href="#"><i class="fas fa-chart-line"></i> Reportes</a>
+            <a href="{% url 'usuarios:reportes_ventas' %}"><i class="fas fa-chart-line"></i> Reportes</a>
             <a href="#" class="active"><i class="fas fa-users"></i> Personal</a>
             <a href="{% url 'usuarios:logout' %}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
         </div>
@@ -24,7 +26,8 @@
     <main class="main-content">
         <header>
             <h2>Gestión de Usuarios</h2>
-            <a href="{% url 'admin:usuarios_usuario_add' %}" target="_blank" class="btn-confirmar" style="width: auto; margin: 0; background: #f28500; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
+            <a href="{% url 'admin:usuarios_usuario_add' %}" target="_blank" class="btn-confirmar"
+                style="width: auto; margin: 0; background: #f28500; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
                 + Nuevo Usuario
             </a>
         </header>
@@ -45,7 +48,8 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <img src="https://ui-avatars.com/api/?name={{ u.username }}&background=random&color=fff" style="border-radius: 50%; width: 30px;">
+                                <img src="https://ui-avatars.com/api/?name={{ u.username }}&background=random&color=fff"
+                                    style="border-radius: 50%; width: 30px;">
                                 {{ u.username }}
                             </div>
                         </td>
@@ -59,14 +63,25 @@
                             </span>
                         </td>
                         <td>
-                            {% if u.is_active %}
-                                <span style="color: green;">● Activo</span>
+                            {% if u.last_activity and u.last_activity >= time_threshold %}
+                            <span
+                                style="color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 12px;">
+                                ● Online
+                            </span>
                             {% else %}
-                                <span style="color: red;">● Inactivo</span>
+                            <div style="color: #757575; font-size: 0.9em;">
+                                ○ Offline
+                                {% if u.last_activity %}
+                                <span style="display: block; font-size: 0.8em; margin-top:2px;">
+                                    Hace {{ u.last_activity|timesince }}
+                                </span>
+                                {% endif %}
+                            </div>
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'admin:usuarios_usuario_change' u.id %}" target="_blank" style="color: #f28500; font-weight: bold; text-decoration: none;">
+                            <a href="{% url 'admin:usuarios_usuario_change' u.id %}" target="_blank"
+                                style="color: #f28500; font-weight: bold; text-decoration: none;">
                                 Editar
                             </a>
                         </td>
@@ -77,4 +92,5 @@
         </section>
     </main>
 </body>
+
 </html>

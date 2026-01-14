@@ -1,12 +1,26 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Menú - El Rincón que No Conoces</title>
     <link rel="stylesheet" href="{% static 'usuarios/css/dashboard_gerente.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <style>
+        .btn-confirmar:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+            transition: 0.2s;
+        }
+
+        .edit-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
     <nav class="sidebar">
         <div class="logo"><i class="fas fa-utensils"></i> El Rincón...</div>
@@ -23,9 +37,11 @@
     <main class="main-content">
         <header>
             <h2>Gestión del Menú</h2>
-            <a href="{% url 'admin:pedidos_producto_add' %}" target="_blank" class="btn-confirmar" style="width: auto; margin: 0; background: #f28500; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
+            <button hx-get="{% url 'pedidos:crear_producto' %}" hx-target="#modal-container" hx-swap="innerHTML"
+                class="btn-confirmar"
+                style="width: auto; margin: 0; background: #f28500; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 1rem;">
                 + Nuevo Plato
-            </a>
+            </button>
         </header>
 
         <section class="audit-section">
@@ -51,23 +67,44 @@
                         <td>{{ p.stock }}</td>
                         <td>
                             {% if p.disponible %}
-                                <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">Disponible</span>
+                            <span
+                                style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">Disponible</span>
                             {% else %}
-                                <span style="background: #ffebee; color: #c62828; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">No Disponible</span>
+                            <span
+                                style="background: #ffebee; color: #c62828; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">No
+                                Disponible</span>
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'admin:pedidos_producto_change' p.id %}" target="_blank" style="color: #f28500; text-decoration: none; font-weight: bold;">
+                            <button hx-get="{% url 'pedidos:editar_producto' p.id %}" hx-target="#modal-container"
+                                hx-swap="innerHTML" class="edit-btn"
+                                style="background: transparent; border: none; color: #f28500; font-weight: bold; cursor: pointer; font-size: 1rem; margin-right: 10px;">
                                 <i class="fas fa-edit"></i> Editar
-                            </a>
+                            </button>
+                            <button hx-get="{% url 'pedidos:gestion_receta' p.id %}" hx-target="#modal-container"
+                                hx-swap="innerHTML" class="edit-btn"
+                                style="background: transparent; border: none; color: #10B981; font-weight: bold; cursor: pointer; font-size: 1rem; margin-right: 10px;">
+                                <i class="fas fa-carrot"></i> Receta
+                            </button>
+                            <button hx-post="{% url 'pedidos:eliminar_producto' p.id %}"
+                                hx-confirm="¿Estás seguro de eliminar el plato '{{ p.nombre }}'?"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                style="background: transparent; border: none; color: #dc2626; font-weight: bold; cursor: pointer; font-size: 1rem;"
+                                title="Eliminar Plato">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6">No hay productos en el menú.</td></tr>
+                    <tr>
+                        <td colspan="6">No hay productos en el menú.</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </section>
     </main>
+    <div id="modal-container"></div>
 </body>
+
 </html>

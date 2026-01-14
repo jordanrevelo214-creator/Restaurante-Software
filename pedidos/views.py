@@ -4,7 +4,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import json
 from django.views.decorators.http import etag
 from django.utils import timezone
@@ -12,7 +12,9 @@ from django.utils import timezone
 from clientes.models import Cliente
 from .models import Pedido, Producto, DetallePedido, Mesa, Factura
 from usuarios.models import AuditLog
-from inventario.models import MovimientoKardex 
+from usuarios.models import AuditLog
+from inventario.models import MovimientoKardex
+from .forms import ProductoForm # Importar Formulario
 
 # --- FUNCIÓN AUXILIAR PARA LA IP ---
 def get_client_ip(request):
@@ -43,22 +45,26 @@ def detalle_mesa(request, mesa_id):
         estado__in=['borrador', 'confirmado', 'listo', 'entregado']
     ).first()
     
-    # Si no hay pedido y la mesa está libre, creamos uno nuevo
+    # Si no hay pedido y la mesa está libre, creamos uno nuevo (pero NO ocupamos la mesa aún)
     if not pedido_activo:
         pedido_activo = Pedido.objects.create(
             mesa=mesa,
             mesero=request.user,
             estado='borrador'
         )
-        mesa.estado = 'ocupada'
-        mesa.save()
+        # mesa.estado = 'ocupada'  <-- ELIMINADO: No ocupar hasta que haya productos
+        # mesa.save()
 
     productos = Producto.objects.filter(disponible=True)
+
+    # Detección manual de HTMX
+    is_htmx = request.headers.get('HX-Request') == 'true' or request.META.get('HTTP_HX_REQUEST')
 
     context = {
         'mesa': mesa,
         'pedido': pedido_activo,
         'productos': productos,
+        'is_htmx': is_htmx,
     }
     return render(request, 'pedidos/detalle_mesa.html', context)
 
@@ -84,6 +90,11 @@ def agregar_producto(request, pedido_id, producto_id):
         # Restar stock
         producto.stock -= 1
         producto.save()
+
+        # NUEVO: Si la mesa estaba libre, ahora sí la ocupamos
+        if pedido.mesa.estado == 'libre':
+            pedido.mesa.estado = 'ocupada'
+            pedido.mesa.save()
 
     # 3. Respuesta: Devolvemos el HTML del panel derecho actualizado
     context = {
@@ -232,6 +243,10 @@ def actualizar_cocina(request):
     pedidos = Pedido.objects.filter(estado='confirmado').order_by('created_at')
     return render(request, 'pedidos/partials/lista_pedidos_cocina.html', {'pedidos': pedidos})
 
+@login_required
+def ver_comanda(request, pedido_id):
+    pedido = get_object_or_404(Pedido, pk=pedido_id)
+    return render(request, 'pedidos/comanda_cocina.html', {'pedido': pedido, 'now': timezone.now()})
 
 @login_required
 def modal_cobrar(request, pedido_id):
@@ -266,7 +281,28 @@ def procesar_pago(request, pedido_id):
         
         factura = Factura.objects.create(**datos_factura)
         
-        # 3. Actualizar Estados
+        # 3. AUTOMATIZACIÓN DE INVENTARIO (KARDEX)
+        # Recorremos cada plato vendido para descontar sus ingredientes
+        for item in pedido.items.all():
+            producto = item.producto
+            cantidad_vendida = item.cantidad
+            
+            # Buscamos si el producto tiene receta (ingredientes)
+            if hasattr(producto, 'receta'):
+                for ingrediente in producto.receta.all():
+                    insumo = ingrediente.insumo
+                    cantidad_a_descontar = ingrediente.cantidad_necesaria * cantidad_vendida
+                    
+                    # Registramos la salida en el Kardex
+                    MovimientoKardex.objects.create(
+                        insumo=insumo,
+                        tipo='salida',
+                        cantidad=cantidad_a_descontar,
+                        costo_total=cantidad_a_descontar * insumo.costo_unitario, # Costo estimado
+                        observacion=f"Venta Pedido #{pedido.id}: {cantidad_vendida}x {producto.nombre}"
+                    )
+
+        # 4. Actualizar Estados
         pedido.estado = 'pagado'
         pedido.save()
         
@@ -280,3 +316,101 @@ def procesar_pago(request, pedido_id):
 def ver_ticket(request, factura_id):
     factura = get_object_or_404(Factura, pk=factura_id)
     return render(request, 'pedidos/ticket.html', {'factura': factura})
+
+# --- GESTIÓN DE PRODUCTOS (GERENTE) ---
+
+# --- GESTIÓN DE RECETAS (Menú Gerente) ---
+from .forms import RecetaForm 
+from inventario.models import Receta
+
+@login_required
+def gestion_receta(request, producto_id):
+    producto = get_object_or_404(Producto, pk=producto_id)
+    recetas = producto.receta.all() # Related name configurado en el modelo
+    
+    if request.method == 'POST':
+        form = RecetaForm(request.POST)
+        if form.is_valid():
+            nueva_receta = form.save(commit=False)
+            nueva_receta.producto = producto
+            nueva_receta.save()
+            # Recargamos el mismo modal con los datos actualizados
+            return render(request, 'pedidos/modals/gestion_receta.html', {
+                'producto': producto, 'recetas': recetas, 'form': RecetaForm()
+            })
+    else:
+        form = RecetaForm()
+
+    return render(request, 'pedidos/modals/gestion_receta.html', {
+        'producto': producto,
+        'recetas': recetas,
+        'form': form
+    })
+
+@login_required
+def eliminar_ingrediente(request, receta_id):
+    receta_item = get_object_or_404(Receta, pk=receta_id)
+    producto_id = receta_item.producto.id
+    receta_item.delete()
+    
+    # Redirigimos de vuelta al modal principal de gestión de ese producto
+    return gestion_receta(request, producto_id)
+
+@login_required
+def crear_producto(request):
+    # Verificación de rol (opcional, pero recomendada)
+    if request.user.rol not in ['gerente', 'admin']:
+        return HttpResponse("No autorizado", status=403)
+
+    if request.method == 'POST':
+        form = ProductoForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            # Retornar refresh para actualizar la tabla
+            return HttpResponse(status=204, headers={'HX-Refresh': 'true'})
+    else:
+        form = ProductoForm()
+    
+    return render(request, 'pedidos/modals/form_producto.html', {'form': form, 'titulo': 'Nuevo Plato'})
+
+@login_required
+def editar_producto(request, pk):
+    if request.user.rol not in ['gerente', 'admin']:
+        return HttpResponse("No autorizado", status=403)
+
+    producto = get_object_or_404(Producto, pk=pk)
+    if request.method == 'POST':
+        form = ProductoForm(request.POST, request.FILES, instance=producto)
+        if form.is_valid():
+            form.save()
+            return HttpResponse(status=204, headers={'HX-Refresh': 'true'})
+    else:
+        form = ProductoForm(instance=producto)
+    
+    return render(request, 'pedidos/modals/form_producto.html', {'form': form, 'titulo': f'Editar {producto.nombre}'})
+
+@login_required
+@require_POST
+def eliminar_producto(request, pk):
+    if request.user.rol not in ['gerente', 'admin']:
+        return HttpResponse("No autorizado", status=403)
+    
+    producto = get_object_or_404(Producto, pk=pk)
+    producto.delete()
+    return HttpResponse(status=204, headers={'HX-Refresh': 'true'})
+
+@login_required
+def check_notificaciones(request):
+    if request.user.rol != 'mesero':
+        return HttpResponse("")
+
+    pedidos_listos = Pedido.objects.filter(
+        mesero=request.user, 
+        estado='listo'
+    )
+    
+    if not pedidos_listos.exists():
+        return HttpResponse("")
+
+    return render(request, 'pedidos/partials/notificaciones.html', {'pedidos_listos': pedidos_listos})
+

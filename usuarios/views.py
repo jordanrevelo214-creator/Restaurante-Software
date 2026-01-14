@@ -2,14 +2,15 @@
 # 📁 usuarios/views.py
 
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone 
 from .models import Usuario, AuditLog
 from pedidos.models import Pedido, Mesa
-from pedidos.models import Producto
+from pedidos.models import Producto, Factura, DetallePedido
 import csv
 from django.http import HttpResponse
 from pedidos.models import Pedido 
@@ -41,14 +42,15 @@ def login_view(request):
 
             if user is not None:
                 login(request, user)
+                # Agregamos ?init_session=true para que el frontend active la "sessionStorage"
                 if user.rol == 'mesero':
-                    return redirect('usuarios:dashboard_mesero')
+                    return redirect(reverse('usuarios:dashboard_mesero') + '?init_session=true')
                 elif user.rol == 'cocina':
-                    return redirect('pedidos:dashboard_cocina')
+                    return redirect(reverse('pedidos:dashboard_cocina') + '?init_session=true')
                 elif user.rol == 'gerente':
-                    return redirect('usuarios:dashboard_gerente')
+                    return redirect(reverse('usuarios:dashboard_gerente') + '?init_session=true')
                 elif user.rol == 'admin':
-                    return redirect('admin:index')
+                    return redirect('/admin/')
                 else:
                     return redirect('/') 
             else:
@@ -81,7 +83,11 @@ def dashboard_gerente(request):
 
     # Datos para las Tarjetas
     total_usuarios = Usuario.objects.count()
-    usuarios_activos = Usuario.objects.filter(is_active=True).count()
+    
+    # Usuarios ONLINE (Actividad en últimos 5 minutos)
+    hace_5_minutos = timezone.now() - timezone.timedelta(minutes=5)
+    usuarios_online = Usuario.objects.filter(last_activity__gte=hace_5_minutos).count()
+    usuarios_activos = usuarios_online # Reemplazamos la variable para el template
     
     # Ventas de HOY
     hoy = timezone.now().date()
@@ -91,11 +97,42 @@ def dashboard_gerente(request):
     # Logs
     ultimos_logs = AuditLog.objects.select_related('user').order_by('-timestamp')[:10]
 
+    # --- DATOS PARA GRÁFICOS ---
+    
+    # 1. Ventas de la Semana (Últimos 7 días)
+    fechas_grafico = []
+    ventas_grafico = []
+    hoy = timezone.now().date()
+    
+    for i in range(6, -1, -1):
+        fecha = hoy - timezone.timedelta(days=i)
+        # Filtramos facturas de ese día
+        venta_dia = Factura.objects.filter(fecha_emision__date=fecha).aggregate(Sum('total'))['total__sum'] or 0
+        
+        # Formato fecha: "Lun 12"
+        fechas_grafico.append(fecha.strftime("%d/%m")) 
+        ventas_grafico.append(float(venta_dia))
+
+    top_productos_q = DetallePedido.objects.filter(pedido__estado='pagado') \
+        .values('producto__nombre') \
+        .annotate(total_vendido=Sum('cantidad')) \
+        .order_by('-total_vendido')[:5]
+
+    top_labels = [item['producto__nombre'] for item in top_productos_q]
+    top_data = [item['total_vendido'] for item in top_productos_q]
+
     context = {
         'total_usuarios': total_usuarios,
         'usuarios_activos': usuarios_activos,
         'total_ventas_hoy': total_ventas_hoy,
         'ultimos_logs': ultimos_logs,
+        'pedidos_completados_hoy': pedidos_hoy.count(),
+        
+        # Datos JSON para JS
+        'fechas_grafico': fechas_grafico,
+        'ventas_grafico': ventas_grafico,
+        'top_labels': top_labels,
+        'top_data': top_data,
     }
     return render(request, 'usuarios/dashboard_gerente.html', context)
 
@@ -105,8 +142,13 @@ def lista_usuarios(request):
     if request.user.rol != 'gerente' and request.user.rol != 'admin':
         return redirect('usuarios:login')
         
-    usuarios = Usuario.objects.all().order_by('username')
-    return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios})
+    usuarios = Usuario.objects.all().order_by('-last_activity')
+    time_threshold = timezone.now() - timezone.timedelta(minutes=5)
+
+    return render(request, 'usuarios/lista_usuarios.html', {
+        'usuarios': usuarios,
+        'time_threshold': time_threshold
+    })
 
 @login_required
 def gestion_menu(request):

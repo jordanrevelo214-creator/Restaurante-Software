@@ -60,6 +60,7 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'usuarios.middleware.UpdateLastActivityMiddleware', # Middleware propio
 ]
 
 ROOT_URLCONF = 'restaurante.urls'
@@ -137,6 +138,16 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# --- CONFIGURACIÓN DE SEGURIDAD DE SESIONES ---
+# Cierra la sesión al cerrar el navegador
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Tiempo de inactividad: 15 minutos (900 segundos)
+SESSION_COOKIE_AGE = 900 
+# Actualizar el tiempo de expiración en cada petición (para que sean 15 min de INACTIVIDAD, no absolutos)
+SESSION_SAVE_EVERY_REQUEST = True
+# Asegura que la cookie no se pueda acceder por JS
+SESSION_COOKIE_HTTPONLY = True
 
 
 # Static files (CSS, JavaScript, Images)

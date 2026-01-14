@@ -1,12 +1,26 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Inventario - El Rincón que No Conoces</title>
     <link rel="stylesheet" href="{% static 'usuarios/css/dashboard_gerente.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <style>
+        .btn-confirmar:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+            transition: 0.2s;
+        }
+
+        .edit-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
     <nav class="sidebar">
         <div class="logo"><i class="fas fa-utensils"></i> El Rincón...</div>
@@ -23,9 +37,18 @@
     <main class="main-content">
         <header>
             <h2>Control de Insumos</h2>
-            <a href="{% url 'admin:inventario_movimientokardex_add' %}" target="_blank" class="btn-confirmar" style="width: auto; margin: 0; background: #28a745; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
-                + Registrar Compra (Entrada)
-            </a>
+            <div style="display: flex; gap: 10px;">
+                <button hx-get="{% url 'inventario:crear_insumo' %}" hx-target="#modal-container" hx-swap="innerHTML"
+                    class="btn-confirmar"
+                    style="width: auto; margin: 0; background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+                    + Nuevo Insumo
+                </button>
+                <button hx-get="{% url 'inventario:registrar_movimiento' %}" hx-target="#modal-container"
+                    hx-swap="innerHTML" class="btn-confirmar"
+                    style="width: auto; margin: 0; background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+                    <i class="fas fa-exchange-alt"></i> Registrar Movimiento
+                </button>
+            </div>
         </header>
 
         <section class="audit-section">
@@ -46,35 +69,50 @@
                         <td><strong>{{ i.nombre }}</strong></td>
                         <td>{{ i.get_unidad_medida_display }}</td>
                         <td>${{ i.costo_unitario }}</td>
-                        
-                        <td style="font-weight: bold; font-size: 1.1em; 
+
+                        <td
+                            style="font-weight: bold; font-size: 1.1em; 
                             {% if i.stock_actual <= i.stock_minimo %} color: #c62828; {% else %} color: #2b3674; {% endif %}">
-                            {{ i.stock_actual }}
+                            {{ i.stock_actual|floatformat:0 }}
                         </td>
 
                         <td>
-                            {% if i.stock_actual <= i.stock_minimo %}
-                                <span style="background: #ffebee; color: #c62828; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">
-                                    ⚠️ BAJO STOCK
+                            {% if i.stock_actual <= i.stock_minimo %} <span
+                                style="background: #ffebee; color: #c62828; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">
+                                ⚠️ BAJO STOCK
                                 </span>
-                            {% else %}
-                                <span style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">
+                                {% else %}
+                                <span
+                                    style="background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">
                                     OK
                                 </span>
-                            {% endif %}
+                                {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'admin:inventario_insumo_change' i.id %}" target="_blank" style="color: #f28500; text-decoration: none; font-weight: bold;">
+                            <button hx-get="{% url 'inventario:editar_insumo' i.id %}" hx-target="#modal-container"
+                                hx-swap="innerHTML" class="edit-btn"
+                                style="background: transparent; border: none; color: #f28500; font-weight: bold; cursor: pointer; font-size: 1rem; margin-right: 5px;">
                                 <i class="fas fa-edit"></i> Editar
-                            </a>
+                            </button>
+                            <button hx-post="{% url 'inventario:eliminar_insumo' i.id %}"
+                                hx-confirm="⚠️ ¿Estás seguro de eliminar el insumo '{{ i.nombre }}'?\nSi borras esto, las recetas que lo usen quedarán incompletas."
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                style="background: transparent; border: none; color: #dc2626; font-weight: bold; cursor: pointer; font-size: 1rem;"
+                                title="Eliminar Insumo">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6">No hay insumos registrados.</td></tr>
+                    <tr>
+                        <td colspan="6">No hay insumos registrados.</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </section>
     </main>
+    <div id="modal-container"></div>
 </body>
+
 </html>
