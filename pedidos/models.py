@@ -20,8 +20,17 @@ class Mesa(models.Model):
 
 # 2. PRODUCTO (Menú)
 class Producto(models.Model):
+    CATEGORIA_CHOICES = [
+        ('entrada', 'Entrada'),
+        ('plato_fuerte', 'Plato Fuerte'),
+        ('bebida', 'Bebida'),
+        ('postre', 'Postre'),
+        ('otro', 'Otro'),
+    ]
+
     nombre = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES, default='otro', verbose_name="Categoría")
     stock = models.IntegerField(default=0, verbose_name="Stock Disponible")
     disponible = models.BooleanField(default=True)
 

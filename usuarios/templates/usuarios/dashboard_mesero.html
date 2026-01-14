@@ -477,6 +477,7 @@
             color: var(--text-gray);
             margin: 0;
             display: -webkit-box;
+            line-clamp: 2;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
@@ -721,9 +722,10 @@
                     {% endif %}
                 </div>
 
-                <div class="card-body">
+                <!-- Capacidad removida por solicitud de diseño -->
+                <!-- <div class="card-body">
                     <i class="fas fa-user-group"></i> {{ mesa.capacidad }} personas
-                </div>
+                </div> -->
 
                 <div class="card-footer">
                     {% if mesa.estado == 'libre' %}
@@ -749,9 +751,30 @@
     <div id="modal-container"></div>
 
     <!-- CONTENEDOR DE NOTIFICACIONES (Polling cada 10s) -->
+    <!-- CONTENEDOR DE NOTIFICACIONES (Polling cada 10s) -->
     <div id="notificaciones-wrapper" hx-get="{% url 'pedidos:check_notificaciones' %}" hx-trigger="every 10s"
         hx-swap="innerHTML">
     </div>
+
+    <!-- SONIDO DE NOTIFICACIÓN -->
+    <audio id="notification-sound"
+        src="https://assets.mixkit.co/sfx/preview/mixkit-crystal-software-notification-2564.mp3" preload="auto"></audio>
+
+    <script>
+        document.body.addEventListener('htmx:afterSwap', function (evt) {
+            // Solo actuar si el swap ocurrió en el wrapper de notificaciones
+            if (evt.target.id === 'notificaciones-wrapper') {
+                // Verificar si llegó contenido real (no vacío)
+                if (evt.target.innerHTML.trim().length > 10) {
+                    const audio = document.getElementById('notification-sound');
+                    // Intentar reproducir (requiere que el usuario haya interactuado antes con la página)
+                    audio.play().catch(error => {
+                        console.log("Reproducción automática bloqueada por el navegador esperando interacción:", error);
+                    });
+                }
+            }
+        });
+    </script>
 
     <script>
         function filtrar() {

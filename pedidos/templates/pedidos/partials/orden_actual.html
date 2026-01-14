@@ -12,14 +12,14 @@
         {% for item in pedido.items.all %}
         <div class="order-item">
             <div class="qty-vertical">
-                <button class="qty-btn" hx-get="{% url 'pedidos:modificar_cantidad' item.id 'sumar' %}"
+                <button type="button" class="qty-btn" hx-get="{% url 'pedidos:modificar_cantidad' item.id 'sumar' %}"
                     hx-target="#zona-pedido" hx-swap="outerHTML">
                     +
                 </button>
 
                 <span class="qty-val">{{ item.cantidad }}</span>
 
-                <button class="qty-btn" hx-get="{% url 'pedidos:modificar_cantidad' item.id 'restar' %}"
+                <button type="button" class="qty-btn" hx-get="{% url 'pedidos:modificar_cantidad' item.id 'restar' %}"
                     hx-target="#zona-pedido" hx-swap="outerHTML">
                     -
                 </button>

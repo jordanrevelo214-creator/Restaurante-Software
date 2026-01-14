@@ -4,10 +4,11 @@ from .models import Producto
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
-        # REMOVIDOS: 'costo_elaboracion' (es @property) y 'categoria' (no existe)
-        fields = ['nombre', 'precio', 'stock', 'disponible']
+        # Ahora incluimos 'categoria'
+        fields = ['nombre', 'categoria', 'precio', 'stock', 'disponible']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-input', 'style': 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;'}),
+            'categoria': forms.Select(attrs={'class': 'form-input', 'style': 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;'}),
             'precio': forms.NumberInput(attrs={'class': 'form-input', 'style': 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;'}),
             'stock': forms.NumberInput(attrs={'class': 'form-input', 'style': 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;'}),
             'disponible': forms.CheckboxInput(attrs={'style': 'transform: scale(1.2); margin-left: 5px;'}),

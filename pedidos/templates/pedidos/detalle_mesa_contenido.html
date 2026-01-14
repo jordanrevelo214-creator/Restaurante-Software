@@ -33,19 +33,24 @@
                     placeholder="Buscar items (ej. Hamburguesa, Bebidas...)" onkeyup="filtrarProductosPOS()">
             </div>
             <div class="filter-chips">
-                <button class="chip chip-active">Todo</button>
-                <button class="chip chip-inactive">Platos Fuertes</button>
-                <button class="chip chip-inactive">Bebidas</button>
-                <button class="chip chip-inactive">Entradas</button>
-                <button class="chip chip-inactive">Postres</button>
+                <button class="chip chip-active" onclick="filtrarCategoria('todo', this)">Todo</button>
+                <button class="chip" onclick="filtrarCategoria('plato_fuerte', this)">Platos Fuertes</button>
+                <button class="chip" onclick="filtrarCategoria('bebida', this)">Bebidas</button>
+                <button class="chip" onclick="filtrarCategoria('entrada', this)">Entradas</button>
+                <button class="chip" onclick="filtrarCategoria('postre', this)">Postres</button>
             </div>
         </div>
 
         <div class="menu-grid" id="gridProductos" style="margin-top: 15px; padding-bottom: 20px;">
             {% for producto in productos %}
-            <div class="product-card item-prod" data-nombre="{{ producto.nombre|lower }}">
+            <div class="product-card item-prod" data-nombre="{{ producto.nombre|lower }}"
+                data-categoria="{{ producto.categoria }}">
                 <div>
                     <h4 class="prod-title">{{ producto.nombre }}</h4>
+                    <span
+                        style="font-size:0.75rem; color:#6B7280; text-transform:uppercase; font-weight:600; display:block; margin-bottom:4px;">
+                        {{ producto.get_categoria_display }}
+                    </span>
                     <p class="prod-desc">
                         Delicioso plato preparado al momento con los mejores ingredientes.
                     </p>
@@ -74,14 +79,45 @@
 </div>
 
 <script>
-    // Lógica simple para filtrar productos en el cliente (sin recargar)
+    // Variables globales para filtros
+    let categoriaActual = 'todo';
+
     function filtrarProductosPOS() {
         let input = document.getElementById('buscador-pos').value.toLowerCase();
         let items = document.getElementsByClassName('item-prod');
 
         for (let i = 0; i < items.length; i++) {
             let nombre = items[i].getAttribute('data-nombre');
-            items[i].style.display = nombre.includes(input) ? "flex" : "none";
+            let categoria = items[i].getAttribute('data-categoria');
+
+            // Lógica combinada: Búsqueda de Texto AND Categoría
+            let coincideTexto = nombre.includes(input);
+            let coincideCategoria = (categoriaActual === 'todo') || (categoria === categoriaActual);
+
+            if (coincideTexto && coincideCategoria) {
+                items[i].style.display = "flex";
+            } else {
+                items[i].style.display = "none";
+            }
         }
+    }
+
+    function filtrarCategoria(categoria, btn) {
+        categoriaActual = categoria;
+
+        // Actualizar visualmente los botones (chips)
+        let chips = document.getElementsByClassName('chip');
+        for (let c of chips) {
+            c.classList.remove('chip-active');
+            c.classList.add('chip-inactive'); // Asegurarnos de tener estilo inactivo
+            c.style.backgroundColor = "";
+            c.style.color = "";
+        }
+
+        btn.classList.add('chip-active');
+        btn.classList.remove('chip-inactive');
+
+        // Re-ejecutar el filtro principal para aplicar la categoría + texto actual
+        filtrarProductosPOS();
     }
 </script>

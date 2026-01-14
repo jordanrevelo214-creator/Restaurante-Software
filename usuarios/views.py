@@ -1,20 +1,28 @@
 
 # 📁 usuarios/views.py
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from .forms import CrearUsuarioForm, EditarUsuarioForm
 from django.db.models import Q, Sum
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone 
 from .models import Usuario, AuditLog
 from pedidos.models import Pedido, Mesa
 from pedidos.models import Producto, Factura, DetallePedido
 import csv
+from django.db.models.functions import TruncDay
+from django.utils.dateparse import parse_date
+import datetime
 from django.http import HttpResponse
 from pedidos.models import Pedido 
 from inventario.models import Insumo
+
+# Helper functions
+def es_gerente(user):
+    return user.is_authenticated and (user.rol == 'gerente' or user.rol == 'admin' or user.is_superuser)
 
 # 1. LOGIN
 def login_view(request):
@@ -164,34 +172,62 @@ def gestion_menu(request):
 @login_required
 def reportes_ventas(request):
     # Seguridad: Solo Gerentes o Admins
-    if request.user.rol != 'gerente' and request.user.rol != 'admin':
+    if not es_gerente(request.user):
         return redirect('usuarios:login')
 
-    # Obtener pedidos pagados
-    pedidos = Pedido.objects.filter(estado='pagado').order_by('-created_at')
-    total_ingresos = sum(p.total for p in pedidos)
+    # Filtros de Fecha
+    fecha_inicio_str = request.GET.get('fecha_inicio')
+    fecha_fin_str = request.GET.get('fecha_fin')
+    
+    # Query Base: Facturas (Ventas reales)
+    facturas = Factura.objects.all().order_by('-fecha_emision').select_related('pedido', 'pedido__mesa', 'pedido__mesero')
+
+    # Aplicar Filtros
+    if fecha_inicio_str and fecha_fin_str:
+        fecha_inicio = parse_date(fecha_inicio_str)
+        fecha_fin = parse_date(fecha_fin_str)
+        if fecha_inicio and fecha_fin:
+            facturas = facturas.filter(fecha_emision__date__range=[fecha_inicio, fecha_fin])
+
+    # Calcular Ingresos Totales (Usando campo real 'total' de Factura)
+    total_ingresos = facturas.aggregate(Sum('total'))['total__sum'] or 0
 
     # Lógica de Exportación a Excel (CSV)
     if 'exportar' in request.GET:
         response = HttpResponse(content_type='text/csv')
+        response.write(u'\ufeff'.encode('utf8'))
         response['Content-Disposition'] = 'attachment; filename="reporte_ventas.csv"'
         
         writer = csv.writer(response)
-        writer.writerow(['ID', 'Fecha', 'Mesa', 'Mesero', 'Total'])
+        writer.writerow(['ID Factura', 'Fecha Emisión', 'Pedido ID', 'Mesa', 'Mesero', 'Cliente', 'Total'])
         
-        for p in pedidos:
+        for f in facturas:
+            mesero = f.pedido.mesero.username if f.pedido.mesero else 'Desconocido'
+            mesa = f"Mesa {f.pedido.mesa.numero}" if f.pedido.mesa else 'Sin Mesa'
             writer.writerow([
-                p.id, 
-                p.created_at.strftime("%d/%m/%Y %H:%M"), 
-                f"Mesa {p.mesa.numero}", 
-                p.mesero.username, 
-                p.total
+                f.id, 
+                f.fecha_emision.strftime("%d/%m/%Y %H:%M"), 
+                f.pedido.id,
+                mesa, 
+                mesero,
+                f.razon_social, # Cliente Snapshot
+                f.total
             ])
         return response
 
+    # Agregación para Gráfico (Ventas por Día)
+    ventas_diarias = facturas.annotate(dia=TruncDay('fecha_emision')).values('dia').annotate(total=Sum('total')).order_by('dia')
+    
+    labels_chart = [v['dia'].strftime("%d/%m") for v in ventas_diarias]
+    data_chart = [float(v['total']) for v in ventas_diarias]
+
     return render(request, 'usuarios/reportes.html', {
-        'pedidos': pedidos, 
-        'total_ingresos': total_ingresos
+        'facturas': facturas, 
+        'total_ingresos': total_ingresos,
+        'labels_chart': labels_chart,
+        'data_chart': data_chart,
+        'fecha_inicio': fecha_inicio_str,
+        'fecha_fin': fecha_fin_str
     })
 
 @login_required
@@ -295,3 +331,31 @@ def password_reset_confirm(request, uidb64, token):
     else:
         messages.error(request, 'El enlace de reseteo es inválido o ha expirado.')
         return render(request, 'usuarios/password_reset_confirm.html', {'validlink': False})
+@login_required
+@user_passes_test(es_gerente)
+def crear_usuario(request):
+    if request.method == 'POST':
+        form = CrearUsuarioForm(request.POST, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Usuario creado exitosamente.')
+            return redirect('usuarios:lista_usuarios')
+    else:
+        form = CrearUsuarioForm(user=request.user)
+    
+    return render(request, 'usuarios/crear_usuario.html', {'form': form})
+
+@login_required
+@user_passes_test(es_gerente)
+def editar_usuario(request, usuario_id):
+    usuario_editar = get_object_or_404(Usuario, pk=usuario_id)
+    if request.method == 'POST':
+        form = EditarUsuarioForm(request.POST, instance=usuario_editar, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Usuario actualizado correctamente.')
+            return redirect('usuarios:lista_usuarios')
+    else:
+        form = EditarUsuarioForm(instance=usuario_editar, user=request.user)
+    
+    return render(request, 'usuarios/editar_usuario.html', {'form': form, 'usuario': usuario_editar})

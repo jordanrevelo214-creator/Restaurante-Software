@@ -86,12 +86,16 @@
 
         <!-- Scripts Chart.js -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        {{ fechas_grafico|json_script:"fechas-data" }}
+        {{ ventas_grafico|json_script:"ventas-data" }}
+        {{ top_labels|json_script:"top-labels-data" }}
+        {{ top_data|json_script:"top-data-data" }}
         <script>
             // Datos desde Django
-            const fechas = {{ fechas_grafico| safe }};
-            const ventas = {{ ventas_grafico| safe }};
-            const topLabels = {{ top_labels| safe }};
-            const topData = {{ top_data| safe }};
+            const fechas = JSON.parse(document.getElementById('fechas-data').textContent);
+            const ventas = JSON.parse(document.getElementById('ventas-data').textContent);
+            const topLabels = JSON.parse(document.getElementById('top-labels-data').textContent);
+            const topData = JSON.parse(document.getElementById('top-data-data').textContent);
 
             // 1. Gráfico de Líneas (Ventas)
             new Chart(document.getElementById('ventasChart'), {

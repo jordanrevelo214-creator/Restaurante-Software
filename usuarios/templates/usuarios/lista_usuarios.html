@@ -26,7 +26,7 @@
     <main class="main-content">
         <header>
             <h2>Gestión de Usuarios</h2>
-            <a href="{% url 'admin:usuarios_usuario_add' %}" target="_blank" class="btn-confirmar"
+            <a href="{% url 'usuarios:crear_usuario' %}" class="btn-confirmar"
                 style="width: auto; margin: 0; background: #f28500; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
                 + Nuevo Usuario
             </a>
@@ -80,7 +80,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'admin:usuarios_usuario_change' u.id %}" target="_blank"
+                            <a href="{% url 'usuarios:editar_usuario' u.id %}"
                                 style="color: #f28500; font-weight: bold; text-decoration: none;">
                                 Editar
                             </a>
