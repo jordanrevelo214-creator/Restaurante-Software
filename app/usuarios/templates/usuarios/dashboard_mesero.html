@@ -674,6 +674,13 @@
     <!-- NAVBAR -->
     <nav class="navbar">
         <a href="#" class="brand"><i class="fas fa-utensils"></i> El Rincón que no Conoces</a>
+
+        <!-- ENLACE DE CAJA -->
+        <a href="{% url 'caja:gestion_caja' %}"
+            style="text-decoration: none; color: #4B5563; font-weight: 600; font-size: 1.1rem; display: flex; gap: 8px; align-items: center; background: #F3F4F6; padding: 8px 16px; border-radius: 12px;">
+            <i class="fas fa-cash-register" style="color: #FF6B00;"></i> Caja
+        </a>
+
         <div class="user-pill">
             <span>{{ user.username }}</span>
             <div class="user-avatar-circle">

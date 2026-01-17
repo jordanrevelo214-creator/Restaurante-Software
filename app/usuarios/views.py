@@ -98,9 +98,10 @@ def dashboard_gerente(request):
     usuarios_activos = usuarios_online # Reemplazamos la variable para el template
     
     # Ventas de HOY
-    hoy = timezone.now().date()
-    pedidos_hoy = Pedido.objects.filter(created_at__date=hoy, estado='pagado')
-    total_ventas_hoy = sum(p.total for p in pedidos_hoy)
+    hoy = timezone.localdate()
+    # Modificado: Usamos Factura.fecha_emision para sumar lo que realmente se facturó/cobró hoy
+    facturas_hoy = Factura.objects.filter(fecha_emision__date=hoy)
+    total_ventas_hoy = facturas_hoy.aggregate(Sum('total'))['total__sum'] or 0
     
     # Logs
     ultimos_logs = AuditLog.objects.select_related('user').order_by('-timestamp')[:10]
@@ -110,7 +111,8 @@ def dashboard_gerente(request):
     # 1. Ventas de la Semana (Últimos 7 días)
     fechas_grafico = []
     ventas_grafico = []
-    hoy = timezone.now().date()
+    # hoy ya está definido arriba como timezone.localdate()
+    # hoy = timezone.now().date() <-- ELIMINADO
     
     for i in range(6, -1, -1):
         fecha = hoy - timezone.timedelta(days=i)
@@ -134,13 +136,16 @@ def dashboard_gerente(request):
         'usuarios_activos': usuarios_activos,
         'total_ventas_hoy': total_ventas_hoy,
         'ultimos_logs': ultimos_logs,
-        'pedidos_completados_hoy': pedidos_hoy.count(),
+        'pedidos_completados_hoy': facturas_hoy.count(), # Corregido: Usamos facturas_hoy
         
         # Datos JSON para JS
         'fechas_grafico': fechas_grafico,
         'ventas_grafico': ventas_grafico,
         'top_labels': top_labels,
         'top_data': top_data,
+        
+        # Nueva métrica: Ventas Semana Actual
+        'ventas_semana_actual': sum(ventas_grafico), # Suma ventas de los últimos 7 días (aprox semana)
     }
     return render(request, 'usuarios/dashboard_gerente.html', context)
 
@@ -239,7 +244,13 @@ def gestion_inventario(request):
     # Traemos todos los insumos ordenados por nombre
     insumos = Insumo.objects.all().order_by('nombre')
     
-    return render(request, 'usuarios/gestion_inventario.html', {'insumos': insumos})
+    # Calcular Valor Total del Inventario
+    valor_total_inventario = sum(i.stock_actual * i.costo_unitario for i in insumos)
+    
+    return render(request, 'usuarios/gestion_inventario.html', {
+        'insumos': insumos, 
+        'valor_total_inventario': valor_total_inventario
+    })
 # 5. PASSWORD RESET REQUEST (solicitar reseteo con EMAIL)
 def password_reset_request(request):
     if request.method == 'POST':

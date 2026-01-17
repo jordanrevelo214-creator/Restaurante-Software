@@ -21,6 +21,7 @@
             <a href="{% url 'usuarios:gestion_inventario' %}"><i class="fas fa-boxes"></i> Inventario</a>
             <a href="{% url 'usuarios:reportes_ventas' %}"><i class="fas fa-chart-line"></i> Reportes</a>
             <a href="{% url 'usuarios:lista_usuarios' %}"><i class="fas fa-users"></i> Personal</a>
+            <a href="{% url 'caja:gestion_caja' %}"><i class="fas fa-cash-register"></i> Caja</a>
             <a href="{% url 'usuarios:logout' %}"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
         </div>
     </nav>
@@ -44,6 +45,15 @@
                 <div class="stat-info">
                     <h4>Ventas de Hoy</h4>
                     <h2>${{ total_ventas_hoy }}</h2>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #eef2ff; color: #4338ca;"><i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>Ventas de la Semana</h4>
+                    <h2>${{ ventas_semana_actual|floatformat:2 }}</h2>
                 </div>
             </div>
 

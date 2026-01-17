@@ -404,6 +404,7 @@ def check_notificaciones(request):
     if request.user.rol != 'mesero':
         return HttpResponse("")
 
+    # Buscar pedidos listos que pertenezcan al mesero actual
     pedidos_listos = Pedido.objects.filter(
         mesero=request.user, 
         estado='listo'

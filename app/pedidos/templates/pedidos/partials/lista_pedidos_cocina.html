@@ -8,11 +8,14 @@
 
 {% for pedido in pedidos %}
 <div class="kitchen-card" style="opacity: 0; animation: slideIn 0.4s forwards;">
-    
+
     <div class="card-header">
         <div>
             <span class="label-orden">ORDEN</span>
             <h3 class="mesa-title">Mesa {{ pedido.mesa.numero }}</h3>
+            <span class="badged-user">
+                <i class="fas fa-user-tie"></i> {{ pedido.mesero.username|default:"Sin Mesero" }}
+            </span>
         </div>
         <span class="badge-id">#{{ pedido.id }}</span>
     </div>
@@ -21,13 +24,13 @@
         {% for item in pedido.items.all %}
         <div class="item-row">
             <div class="qty-box">{{ item.cantidad }}</div>
-            
+
             <div class="item-details">
                 <span class="item-name">{{ item.producto.nombre }}</span>
                 {% if item.notas %}
-                    <div class="item-note">
-                        <i class="fas fa-comment-alt"></i> {{ item.notas }}
-                    </div>
+                <div class="item-note">
+                    <i class="fas fa-comment-alt"></i> {{ item.notas }}
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -64,6 +67,7 @@
         justify-content: space-between;
         align-items: flex-start;
     }
+
     .label-orden {
         font-size: 0.7rem;
         color: #F97316;
@@ -72,14 +76,17 @@
         display: block;
         margin-bottom: 2px;
     }
+
     .mesa-title {
         font-size: 1.4rem;
         font-weight: 800;
         color: #1F2937;
         margin: 0;
     }
+
     .badge-id {
-        background: #FFEDD5; /* Naranja muy suave */
+        background: #FFEDD5;
+        /* Naranja muy suave */
         color: #EA580C;
         padding: 5px 12px;
         border-radius: 20px;
@@ -92,6 +99,7 @@
         padding: 10px 20px 20px 20px;
         flex: 1;
     }
+
     .item-row {
         display: flex;
         align-items: flex-start;
@@ -100,7 +108,10 @@
         border-bottom: 1px dashed #F3F4F6;
         padding-bottom: 8px;
     }
-    .item-row:last-child { border-bottom: none; }
+
+    .item-row:last-child {
+        border-bottom: none;
+    }
 
     .qty-box {
         background: #FFF7ED;
@@ -114,12 +125,14 @@
         border-radius: 8px;
         font-size: 1.1rem;
     }
+
     .item-name {
         font-weight: 600;
         color: #374151;
         font-size: 1rem;
         display: block;
     }
+
     .item-note {
         font-size: 0.8rem;
         color: #EF4444;
@@ -133,6 +146,7 @@
         background: #FAFAFA;
         border-top: 1px solid #F3F4F6;
     }
+
     .meta-info {
         display: flex;
         justify-content: space-between;
@@ -141,12 +155,14 @@
         font-weight: 600;
         margin-bottom: 15px;
     }
+
     .btn-ready {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
-        background: #10B981; /* Verde vibrante */
+        background: #10B981;
+        /* Verde vibrante */
         color: white;
         text-decoration: none;
         padding: 12px;
@@ -156,11 +172,22 @@
         transition: 0.2s;
         box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
     }
+
     .btn-ready:hover {
         background: #059669;
         transform: translateY(-2px);
     }
 
-    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 {% endfor %}

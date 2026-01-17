@@ -23,7 +23,8 @@ urlpatterns = [
     path('', RedirectView.as_view(url='/usuarios/login/')),  # ← Esta línea redirige / a login
     path('admin/', admin.site.urls),
      path('usuarios/', include('usuarios.urls')),
-    path('pedidos/', include('pedidos.urls')), 
     path('clientes/', include('clientes.urls')),
+    path('pedidos/', include('pedidos.urls')),
     path('inventario/', include('inventario.urls')),
+    path('caja/', include('caja.urls')),
 ]
